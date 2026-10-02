@@ -1,0 +1,67 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}Inteligência comercial{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h4 class="mb-0">Inteligência comercial</h4>
+  <form class="d-flex flex-wrap gap-2 align-items-center mw-100">
+    <label class="small text-muted">Entrada de</label><input type="date" name="de" value="{{ de|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:auto">
+    <label class="small text-muted">até</label><input type="date" name="ate" value="{{ ate|date:'Y-m-d' }}" class="form-control form-control-sm" style="width:auto">
+    <select name="responsavel" class="form-select form-select-sm" style="width:auto;max-width:100%"><option value="">Todos os advogados</option>
+      {% for u in advogados %}<option value="{{ u.pk }}"{% if u.pk|stringformat:"s" == responsavel %} selected{% endif %}>{{ u|nome_usuario }}</option>{% endfor %}</select>
+    <button class="btn btn-sm btn-outline-secondary">Filtrar</button>
+  </form>
+</div>
+
+{% with g=ind.geral %}
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Contatos atendidos</div><div class="num">{{ g.total }}</div>
+    <div class="small text-muted">{{ g.abertos }} em andamento</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Taxa de conversão</div><div class="num">{% if g.conversao is None %}—{% else %}{{ g.conversao }}%{% endif %}</div>
+    <div class="small text-muted">{{ g.fechados }} contrato(s) de {{ g.total }} contato(s)</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Tempo médio de maturação</div><div class="num">{% if g.maturacao_media is None %}—{% else %}{{ g.maturacao_media }} dias{% endif %}</div>
+    <div class="small text-muted">do contato à assinatura</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Perdidos</div><div class="num">{{ g.perdidos }}</div>
+    <div class="small text-muted">honorários fechados: {{ g.honorarios_fechados|brl }}</div></div></div>
+</div>
+{% endwith %}
+
+<div class="row g-3">
+  <div class="col-lg-7"><div class="card mb-3"><div class="card-header">Conversão e maturação por área do direito</div>
+    <div class="table-responsive"><table class="table mb-0 align-middle">
+      <thead><tr><th>Área</th><th class="num">Contatos</th><th class="num">Fechados</th><th class="num">Perdidos</th><th class="num">Conversão</th><th class="num">Entre decididos</th><th class="num">Maturação média</th><th class="num">Mediana</th><th class="num">Mín–máx</th></tr></thead>
+      <tbody>{% for a in ind.por_area %}
+      <tr><td>{{ a.nome }}</td><td class="num">{{ a.total }}</td><td class="num">{{ a.fechados }}</td><td class="num">{{ a.perdidos }}</td>
+        <td class="num">{% if a.conversao is None %}—{% else %}{{ a.conversao }}%{% endif %}</td>
+        <td class="num">{% if a.conversao_decididos is None %}—{% else %}{{ a.conversao_decididos }}%{% endif %}</td>
+        <td class="num">{% if a.maturacao_media is None %}—{% else %}{{ a.maturacao_media }} d{% endif %}</td>
+        <td class="num">{% if a.maturacao_mediana is None %}—{% else %}{{ a.maturacao_mediana }} d{% endif %}</td>
+        <td class="num">{% if a.maturacao_min is None %}—{% else %}{{ a.maturacao_min }}–{{ a.maturacao_max }} d{% endif %}</td></tr>
+      {% endfor %}</tbody>
+    </table></div>
+    <div class="card-footer bg-white small text-muted">Conversão = contratos assinados ÷ contatos que entraram no período.
+      “Entre decididos” desconsidera os atendimentos ainda em andamento. Maturação = dias entre a entrada do contato e a assinatura do contrato.</div>
+  </div>
+  <div class="card"><div class="card-header">Conversão por origem do contato</div>
+    <div class="table-responsive"><table class="table mb-0 align-middle">
+      <thead><tr><th>Origem</th><th class="num">Contatos</th><th class="num">Fechados</th><th class="num">Conversão</th><th class="num">Maturação média</th></tr></thead>
+      <tbody>{% for a in ind.por_origem %}
+      <tr><td>{{ a.nome }}</td><td class="num">{{ a.total }}</td><td class="num">{{ a.fechados }}</td>
+        <td class="num">{% if a.conversao is None %}—{% else %}{{ a.conversao }}%{% endif %}</td>
+        <td class="num">{% if a.maturacao_media is None %}—{% else %}{{ a.maturacao_media }} d{% endif %}</td></tr>
+      {% empty %}<tr><td colspan="5" class="text-center text-muted py-3">Sem dados no período.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div></div>
+
+  <div class="col-lg-5"><div class="card mb-3"><div class="card-header">Motivos de perda</div><div class="card-body">
+    {% for m in ind.motivos %}
+    <div class="d-flex justify-content-between small"><span>{{ m.nome }}</span><span>{{ m.n }} · {{ m.pct }}%</span></div>
+    <div class="progress mb-3" style="height:.6rem"><div class="progress-bar bg-danger" style="width:{{ m.pct|stringformat:'.0f' }}%"></div></div>
+    {% empty %}<div class="text-muted">Nenhum atendimento perdido no período.</div>{% endfor %}
+  </div></div>
+  <div class="card"><div class="card-header">Funil</div><div class="card-body">
+    {% for f in ind.funil %}
+    <div class="d-flex justify-content-between small"><span>{{ f.nome }}</span><span>{{ f.n }}</span></div>
+    <div class="progress mb-3" style="height:.6rem"><div class="progress-bar bg-{{ f.cod|etapa_cor }}" style="width:{{ f.pct|stringformat:'.0f' }}%"></div></div>
+    {% endfor %}
+  </div></div></div>
+</div>
+{% endblock %}

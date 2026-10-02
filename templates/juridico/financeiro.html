@@ -1,0 +1,49 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Financeiro{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h4 class="mb-0">Financeiro – honorários e despesas</h4>
+  <div class="d-flex gap-2">
+    <a href="?{{ request.GET.urlencode }}&formato=csv" class="btn btn-outline-secondary"><i class="bi bi-download"></i> CSV</a>
+    <a href="{% url 'juridico:lancamento_novo' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Novo lançamento</a>
+  </div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Honorários a receber</div><div class="num fs-4">{{ resumo.a_receber|brl }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Em atraso</div><div class="num fs-4 {% if resumo.em_atraso %}text-danger{% endif %}">{{ resumo.em_atraso|brl }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Recebido em {{ hoje|date:"m/Y" }}</div><div class="num fs-4">{{ resumo.recebido_mes|brl }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Despesas em aberto</div><div class="num fs-4">{{ resumo.despesas_abertas|brl }}</div></div></div>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-12 col-md"><input name="q" value="{{ q }}" class="form-control" placeholder="Cliente, descrição ou número do processo"></div>
+  <div class="col-6 col-md-auto"><select name="natureza" class="form-select"><option value="">Honorários e despesas</option>
+    {% for cod, nome in naturezas %}<option value="{{ cod }}"{% if cod == natureza %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-auto"><select name="situacao" class="form-select">
+    <option value="aberto"{% if situacao == "aberto" %} selected{% endif %}>Em aberto</option>
+    <option value="atraso"{% if situacao == "atraso" %} selected{% endif %}>Em atraso</option>
+    <option value="pago"{% if situacao == "pago" %} selected{% endif %}>Pagos</option>
+    <option value="todos"{% if situacao == "todos" %} selected{% endif %}>Todos</option></select></div>
+  <div class="col-6 col-md-auto"><input type="date" name="de" value="{{ de|date:'Y-m-d' }}" class="form-control" title="Vencimento de"></div>
+  <div class="col-6 col-md-auto"><input type="date" name="ate" value="{{ ate|date:'Y-m-d' }}" class="form-control" title="Vencimento até"></div>
+  <div class="col-auto"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+<thead><tr><th>Vencimento</th><th>Cliente</th><th>Descrição</th><th class="num">Valor</th><th>Situação</th><th></th></tr></thead>
+<tbody>{% for x in page %}
+<tr><td class="text-nowrap">{{ x.vencimento|date:"d/m/Y" }}</td>
+<td><a href="{% url 'juridico:pasta' x.cliente.pk %}" class="text-decoration-none">{{ x.cliente.nome|truncatechars:32 }}</a>
+  {% if x.processo %}<div class="small text-muted">{{ x.processo.numero|default:x.processo.titulo|truncatechars:34 }}</div>{% endif %}</td>
+<td>{{ x.descricao }}<div class="small text-muted">{{ x.get_categoria_display }}{% if x.natureza == "PAGAR" %} · despesa{% endif %}</div></td>
+<td class="num">{{ x.valor|brl }}</td>
+<td><span class="badge text-bg-{{ x.situacao.1 }}">{{ x.situacao.0 }}</span>{% if x.pago_em %}<div class="small text-muted">{{ x.pago_em|date:"d/m/Y" }}{% if x.forma_pagamento %} · {{ x.get_forma_pagamento_display }}{% endif %}</div>{% endif %}</td>
+<td class="text-end text-nowrap">
+  <form method="post" action="{% url 'juridico:lancamento_pagar' x.pk %}" class="d-inline-flex gap-1 align-items-center">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+    {% if x.pago_em %}<button name="acao" value="estornar" class="btn btn-sm btn-outline-secondary" title="Desfazer a baixa" onclick="return confirm('Desfazer a baixa deste lançamento?')"><i class="bi bi-arrow-counterclockwise"></i></button>
+    {% else %}<select name="forma_pagamento" class="form-select form-select-sm" style="width:auto" title="Forma de pagamento"><option value="">Forma</option>{% for cod, nome in formas %}<option value="{{ cod }}">{{ nome }}</option>{% endfor %}</select>
+    <button class="btn btn-sm btn-outline-success text-nowrap" title="Dar baixa com a data de hoje"><i class="bi bi-check2"></i> Baixar</button>{% endif %}</form>
+  <a href="{% url 'juridico:lancamento_editar' x.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a>
+  {% if pode.excluir %}<form method="post" action="{% url 'juridico:lancamento_excluir' x.pk %}" class="d-inline" onsubmit="return confirm('Excluir este lançamento?')">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-outline-danger" title="Excluir"><i class="bi bi-trash"></i></button></form>{% endif %}
+</td></tr>
+{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhum lançamento encontrado.</td></tr>{% endfor %}</tbody>
+</table></div><div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div>
+<p class="small text-muted mt-2">Os cartões somam os lançamentos da busca (cliente, natureza e período), em qualquer situação.</p>
+{% endblock %}

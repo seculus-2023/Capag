@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}Enviar por {{ canal }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7">
+<h4 class="mb-0">Enviar por {{ canal }}</h4><div class="text-muted mb-3">{{ a.empresa.razao_social }} · CAPAG de {{ a.data_referencia|date:"d/m/Y" }}</div>
+{% if canal == "WhatsApp" and not api %}<div class="alert alert-info small"><i class="bi bi-info-circle"></i> A WhatsApp Cloud API não está configurada. O sistema vai abrir o WhatsApp com a mensagem pronta e um link seguro para o PDF (válido por alguns dias). Para enviar o PDF direto como anexo, preencha <code>WHATSAPP_TOKEN</code> e <code>WHATSAPP_PHONE_NUMBER_ID</code> no <code>.env</code>.</div>{% endif %}
+{% if canal == "E-mail" %}<div class="alert alert-light border small"><i class="bi bi-paperclip"></i> O relatório em PDF vai anexado ao e-mail.</div>{% endif %}
+<form method="post" class="card"><div class="card-body">{% csrf_token %}
+{% for f in form %}<div class="mb-3">{% include "core/_field.html" with field=f %}</div>{% endfor %}
+</div><div class="card-footer bg-white d-flex gap-2">
+<button class="btn {% if canal == 'WhatsApp' %}btn-success{% else %}btn-primary{% endif %}"><i class="bi bi-send"></i> Enviar</button>
+<a href="{{ a.get_absolute_url }}" class="btn btn-link">Cancelar</a></div></form>
+</div></div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Alertas de risco{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div><h4 class="mb-0">Alertas de risco e inconsistências</h4>
+    <div class="text-muted small">Avalia a última análise de cada empresa ativa{% if ano %} em {{ ano }}{% endif %} e compara com o ano anterior.</div></div>
+  <a class="btn btn-outline-secondary" href="?{{ request.GET.urlencode }}&formato=csv"><i class="bi bi-filetype-csv"></i> Exportar CSV</a>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-6 col-md-3"><select name="ano" class="form-select"><option value="">Ano fiscal</option>{% for y in anos %}<option {% if ano == y %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-3"><select name="severidade" class="form-select"><option value="">Severidade</option>
+    <option value="critico" {% if severidade == "critico" %}selected{% endif %}>Crítico</option>
+    <option value="atencao" {% if severidade == "atencao" %}selected{% endif %}>Atenção</option>
+    <option value="info" {% if severidade == "info" %}selected{% endif %}>Informativo</option></select></div>
+  <div class="col-md-4"><select name="tipo" class="form-select"><option value="">Tipo de alerta</option>{% for v,l in tipos %}<option value="{{ v }}" {% if tipo == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100"><i class="bi bi-funnel"></i> Filtrar</button></div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-4"><div class="card p-3 stat"><div class="text-muted small">Críticos</div><div class="num text-danger">{{ contagem.critico }}</div></div></div>
+  <div class="col-4"><div class="card p-3 stat"><div class="text-muted small">Atenção</div><div class="num text-warning">{{ contagem.atencao }}</div></div></div>
+  <div class="col-4"><div class="card p-3 stat"><div class="text-muted small">Empresas com alerta</div><div class="num">{{ empresas|length }}</div></div></div>
+</div>
+
+{% for item in empresas %}{% with a=item.analise %}
+<div class="card mb-2"><div class="card-body py-2">
+  <div class="d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <div><a href="{{ a.get_absolute_url }}" class="fw-semibold text-decoration-none">{{ a.empresa.razao_social }}</a>
+      <span class="small text-muted">· {{ a.empresa.cnpj }} · ref. {{ a.data_referencia|date:"d/m/Y" }}</span></div>
+    <div class="d-flex align-items-center gap-2"><span class="small text-muted">Nota</span>{% rating a.rating_real %}
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'relatorio_evolucao' %}?empresa={{ a.empresa_id }}" title="Evolução"><i class="bi bi-graph-up"></i></a>
+      <a class="btn btn-sm btn-outline-secondary" href="{% url 'relatorio_composicao_analise' a.pk %}" title="Composição"><i class="bi bi-calculator"></i></a></div>
+  </div>
+  <ul class="list-unstyled mb-0 mt-1">{% for x in item.alertas %}
+    <li class="small py-1"><span class="badge bg-{{ x.cor }}">{{ x.severidade_label }}</span> <span class="text-muted">{{ x.tipo_label }}:</span> {{ x.mensagem }}</li>
+  {% endfor %}</ul>
+</div></div>
+{% endwith %}{% empty %}
+<div class="card p-4 text-center text-muted"><i class="bi bi-check-circle fs-3 text-success"></i><div>Nenhum alerta encontrado com os filtros atuais.</div></div>
+{% endfor %}
+{% endblock %}

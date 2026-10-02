@@ -1,0 +1,29 @@
+{% extends "base.html" %}{% block title %}Conteúdos informativos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <div><h4 class="mb-0">Conteúdos informativos</h4>
+    <div class="small text-muted">{{ inscritos }} contato(s) autorizaram o recebimento por e-mail.</div></div>
+  <a href="{% url 'crm:conteudo_novo' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Novo conteúdo</a>
+</div>
+<div class="alert alert-info small"><i class="bi bi-info-circle"></i> Conteúdo educativo sobre direitos e leis, enviado apenas a quem autorizou
+(Provimento 205/2021 da OAB e LGPD). Cada e-mail traz a identificação do escritório e o link para deixar de receber.
+O envio ocorre sozinho na data marcada, depois da aprovação de um advogado.</div>
+<div class="card"><div class="table-responsive"><table class="table mb-0 align-middle">
+<thead><tr><th>Título</th><th>Área</th><th>Enviar a partir de</th><th>Status</th><th class="text-center">Destinatários</th><th></th></tr></thead>
+<tbody>{% for c in conteudos %}
+<tr><td>{{ c.titulo }}</td><td>{{ c.get_area_display|default:"Todas" }}</td><td>{{ c.enviar_a_partir|date:"d/m/Y" }}</td>
+<td><span class="badge text-bg-{% if c.status == 'ENVIADO' %}success{% elif c.status == 'APROVADO' %}info{% else %}secondary{% endif %}">{{ c.get_status_display }}</span>
+  {% if c.enviado_em %}<div class="small text-muted">{{ c.enviado_em|date:"d/m/Y H:i" }}</div>{% endif %}</td>
+<td class="text-center">{% if c.status == "ENVIADO" %}{{ c.n_enviados }} enviado(s){% else %}{{ c.n_destinatarios }}{% endif %}</td>
+<td class="text-end text-nowrap">
+  {% if c.status != "ENVIADO" %}
+  <a href="{% url 'crm:conteudo_editar' c.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>
+  {% if pode.administrar %}
+    {% if c.status == "RASCUNHO" %}<form method="post" action="{% url 'crm:conteudo_acao' c.pk 'aprovar' %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-primary">Aprovar</button></form>{% endif %}
+    {% if c.status == "APROVADO" %}<form method="post" action="{% url 'crm:conteudo_acao' c.pk 'enviar' %}" class="d-inline" onsubmit="return confirm('Enviar agora para {{ c.n_destinatarios }} contato(s)?')">{% csrf_token %}<button class="btn btn-sm btn-primary">Enviar agora</button></form>{% endif %}
+    <form method="post" action="{% url 'crm:conteudo_acao' c.pk 'excluir' %}" class="d-inline" onsubmit="return confirm('Excluir o conteúdo?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+  {% endif %}{% endif %}
+</td></tr>
+{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhum conteúdo cadastrado.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

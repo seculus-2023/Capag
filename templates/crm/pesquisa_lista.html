@@ -1,0 +1,25 @@
+{% extends "base.html" %}{% load crm_tags %}{% block title %}Pesquisa de mercado{% endblock %}
+{% block content %}
+<h4 class="mb-1">Pesquisa de mercado</h4>
+<div class="text-muted mb-3">Extrai as empresas de um município a partir do OpenStreetMap (gratuito).</div>
+<div class="alert alert-info small"><i class="bi bi-info-circle"></i> Lista para <b>estudo de mercado</b>: as empresas não entram no funil
+nem recebem mensagens. Pelas regras da OAB (Provimento 205/2021), o escritório não aborda quem não o procurou.
+A base do OpenStreetMap é colaborativa: nem toda empresa está no mapa e muitas não têm telefone ou site.</div>
+<form method="post" class="card mb-4"><div class="card-body">{% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>{% endif %}
+  <div class="row g-3 align-items-start">
+    <div class="col-md-4">{% include "core/_field.html" with field=form.categoria %}</div>
+    <div class="col-md-3">{% include "core/_field.html" with field=form.termo %}</div>
+    <div class="col-md-3">{% include "core/_field.html" with field=form.municipio %}</div>
+    <div class="col-md-1">{% include "core/_field.html" with field=form.uf %}</div>
+    <div class="col-md-1"><label class="form-label d-none d-md-block">&nbsp;</label><button class="btn btn-primary w-100" onclick="this.innerHTML='...'"><i class="bi bi-search"></i></button></div>
+  </div>
+</div></form>
+<div class="card"><div class="card-header">Pesquisas feitas</div><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+<thead><tr><th>Data</th><th>Pesquisa</th><th>Município</th><th class="num">Empresas</th><th>Usuário</th></tr></thead>
+<tbody>{% for p in pesquisas %}
+<tr style="cursor:pointer" onclick="location='{{ p.get_absolute_url }}'"><td>{{ p.criado_em|date:"d/m/Y H:i" }}</td><td>{{ p.descricao }}</td>
+<td>{{ p.municipio }}/{{ p.uf }}</td><td class="num">{{ p.total }}</td><td>{{ p.usuario|nome_usuario }}</td></tr>
+{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Nenhuma pesquisa ainda.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endblock %}

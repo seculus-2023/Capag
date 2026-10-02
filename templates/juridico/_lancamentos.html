@@ -1,0 +1,23 @@
+{% load capag %}
+<div class="card mb-3"><div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span><i class="bi bi-cash-coin"></i> Honorários e despesas</span>
+    <a href="{% url 'juridico:lancamento_novo' %}?{{ novo_query }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Lançar</a></div>
+  <div class="card-body border-bottom small d-flex flex-wrap gap-3">
+    <span>A receber: <b>{{ resumo.a_receber|brl }}</b></span>
+    <span class="{% if resumo.em_atraso %}text-danger{% endif %}">Em atraso: <b>{{ resumo.em_atraso|brl }}</b></span>
+    <span>Despesas em aberto: <b>{{ resumo.despesas_abertas|brl }}</b></span>
+  </div>
+  <div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
+    <thead><tr><th>Vencimento</th><th>Descrição</th><th class="num">Valor</th><th>Situação</th><th></th></tr></thead>
+    <tbody>{% for x in lancamentos %}
+    <tr><td class="text-nowrap">{{ x.vencimento|date:"d/m/Y" }}</td>
+      <td>{{ x.descricao }}<div class="small text-muted">{{ x.get_categoria_display }}{% if x.natureza == "PAGAR" %} · despesa{% endif %}</div></td>
+      <td class="num">{{ x.valor|brl }}</td>
+      <td><span class="badge text-bg-{{ x.situacao.1 }}">{{ x.situacao.0 }}</span>{% if x.pago_em %}<div class="small text-muted">{{ x.pago_em|date:"d/m/Y" }}</div>{% endif %}</td>
+      <td class="text-end text-nowrap">
+        {% if not x.pago_em %}<form method="post" action="{% url 'juridico:lancamento_pagar' x.pk %}" class="d-inline">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button class="btn btn-sm btn-outline-success" title="Dar baixa hoje"><i class="bi bi-check2"></i></button></form>{% endif %}
+        <a href="{% url 'juridico:lancamento_editar' x.pk %}" class="btn btn-sm btn-outline-secondary" title="Editar"><i class="bi bi-pencil"></i></a></td></tr>
+    {% empty %}<tr><td colspan="5" class="text-center text-muted py-3">Nenhum lançamento.</td></tr>{% endfor %}</tbody>
+  </table></div>
+</div>

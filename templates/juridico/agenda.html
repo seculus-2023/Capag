@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}Prazos{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <div><h4 class="mb-0">Agenda de prazos</h4>
+    <div class="small text-muted">{% if todos %}Todos os responsáveis · <a href="?">ver só os meus</a>{% else %}Meus prazos · <a href="?todos=1">ver todos</a>{% endif %} · {{ total }} pendente(s)</div></div>
+  <a href="{% url 'juridico:processo_lista' %}" class="btn btn-outline-secondary"><i class="bi bi-journal-text"></i> Processos</a>
+</div>
+<div class="alert alert-info small"><i class="bi bi-info-circle"></i> Os prazos são lançados à mão em cada processo. O sistema não lê
+intimações nem publicações dos tribunais: confira o Diário e as caixas postais (PJe, e-SAJ, Regularize, Sefaz) como de costume.</div>
+{% for titulo, cor, lista in grupos %}
+{% if lista or forloop.counter <= 2 %}
+<div class="card mb-3"><div class="card-header border-start border-4 border-{{ cor }}">{{ titulo }} <span class="badge text-bg-{{ cor }}">{{ lista|length }}</span></div>
+  <ul class="list-group list-group-flush">{% for pz in lista %}{% include "juridico/_prazo.html" with mostrar_processo=True %}
+  {% empty %}<li class="list-group-item text-muted">Nenhum prazo.</li>{% endfor %}</ul>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

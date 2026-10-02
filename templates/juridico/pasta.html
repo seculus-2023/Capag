@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}Pasta – {{ cliente.nome }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div style="min-width:0"><h4 class="mb-0 text-break"><i class="bi bi-folder2-open"></i> {{ cliente.nome }}</h4>
+    <div class="text-muted">Pasta do cliente{% if cliente.documento %} · {{ cliente.documento }}{% endif %} · {{ cliente.responsavel|nome_usuario }}</div></div>
+  <a href="{{ cliente.get_absolute_url }}" class="btn btn-outline-secondary"><i class="bi bi-person-lines-fill"></i> Cadastro e atendimentos</a>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    {% if pode.processos %}
+    <div class="card mb-3"><div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-journal-text"></i> Processos</span>
+      {% if pode.processos_editar %}<a href="{% url 'juridico:processo_novo' %}?cliente={{ cliente.pk }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Novo processo</a>{% endif %}</div>
+      <ul class="list-group list-group-flush">{% for p in processos %}
+        <a href="{{ p.get_absolute_url }}" class="list-group-item list-group-item-action d-flex justify-content-between gap-2">
+          <span style="min-width:0">{{ p.titulo }}<div class="small text-muted text-break">{{ p.numero|default:"sem número" }} · {{ p.orgao|default:p.get_tipo_display }} · {{ p.responsavel|nome_usuario }}</div></span>
+          <span class="badge text-bg-{% if p.status == 'ATIVO' %}success{% elif p.status == 'SUSPENSO' %}warning{% else %}secondary{% endif %} align-self-start">{{ p.get_status_display }}</span></a>
+      {% empty %}<li class="list-group-item text-muted">Nenhum processo cadastrado.</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+    {% if pode.financeiro %}{% include "juridico/_lancamentos.html" %}{% endif %}
+  </div>
+  <div class="col-lg-5">
+    {% if pode.documentos %}{% include "juridico/_documentos.html" with cliente_pk=cliente.pk %}{% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,82 @@
+{% extends "base.html" %}{% load capag %}{% block title %}CAPAG {{ a.empresa.razao_social }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+  <div><a href="{{ a.empresa.get_absolute_url }}" class="small text-decoration-none"><i class="bi bi-arrow-left"></i> {{ a.empresa.razao_social }}</a>
+    <h4 class="mb-0">Análise de CAPAG · {{ a.data_referencia|date:"d/m/Y" }}</h4>
+    <div class="text-muted">{{ a.empresa.cnpj }}{% if a.descricao %} · {{ a.descricao }}{% endif %} · <span class="badge text-bg-light">{{ a.get_status_display }}</span></div></div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'enviar_whatsapp' a.pk %}" class="btn btn-success"><i class="bi bi-whatsapp"></i> WhatsApp</a>
+    <a href="{% url 'enviar_email' a.pk %}" class="btn btn-primary"><i class="bi bi-envelope"></i> E-mail</a>
+    <a href="{% url 'analise_pdf' a.pk %}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-pdf"></i> PDF</a>
+    <button class="btn btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#modalComposicao"><i class="bi bi-calculator"></i> Indicadores</button>
+    <div class="dropdown"><button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">Mais</button>
+      <ul class="dropdown-menu dropdown-menu-end">
+        <li><a class="dropdown-item" href="{% url 'analise_editar' a.pk %}"><i class="bi bi-pencil"></i> Editar</a></li>
+        <li><form method="post" action="{% url 'analise_recalcular' a.pk %}">{% csrf_token %}<button class="dropdown-item"><i class="bi bi-arrow-repeat"></i> Recalcular com parâmetros atuais</button></form></li>
+        <li><form method="post" action="{% url 'analise_duplicar' a.pk %}">{% csrf_token %}<button class="dropdown-item"><i class="bi bi-files"></i> Duplicar</button></form></li>
+        <li><hr class="dropdown-divider"></li>
+        {% if pode.excluir %}<li><form method="post" action="{% url 'analise_excluir' a.pk %}" onsubmit="return confirm('Excluir esta análise?')">{% csrf_token %}<button class="dropdown-item text-danger"><i class="bi bi-trash"></i> Excluir</button></form></li>{% endif %}
+      </ul></div>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card p-3 h-100 text-center"><div class="text-muted small">Rating PGFN (presumido)</div><div class="my-2">{% rating a.rating_pgfn True %}</div><div class="money">{{ a.capag_presumida|brl }}</div></div></div>
+  <div class="col-md-4"><div class="card p-3 h-100 text-center"><div class="text-muted small">Rating real apurado</div><div class="my-2">{% rating a.rating_real True %}</div><div class="money fw-bold">{{ a.capag_real|brl }}</div></div></div>
+  <div class="col-md-4"><div class="card p-3 h-100 text-center"><div class="text-muted small">Dívida ativa consolidada</div><div class="fs-4 fw-bold my-2 money">{{ a.divida_total|brl }}</div>
+    {% if a.prazo_revisao %}<div class="small">Prazo de revisão: <b>{{ a.prazo_revisao|date:"d/m/Y" }}</b></div>{% endif %}</div></div>
+</div>
+{% if a.revisao_favoravel %}<div class="alert alert-success"><i class="bi bi-check-circle"></i> A capacidade real ({{ a.rating_real }}) é menor que a presumida pela PGFN ({{ a.rating_pgfn }}). Cabe pedido de revisão da CAPAG.</div>
+{% elif a.rating_pgfn and a.rating_real == a.rating_pgfn %}<div class="alert alert-secondary">O rating real coincide com o da PGFN. A revisão não mudaria a classificação.</div>{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-6"><div class="card mb-3"><div class="card-header">Quadro comparativo</div>
+    <div class="table-responsive"><table class="table mb-0"><thead><tr><th>Indicador</th><th class="num">Presumido PGFN</th><th class="num">Real</th></tr></thead><tbody>
+    {% for nome, pres, real in quadro %}<tr><td>{{ nome }}</td>
+      {% if nome == "Rating" %}<td class="num">{% rating pres %}</td><td class="num">{% rating real %}</td>
+      {% elif nome == "Relação CAPAG ÷ dívida" %}<td class="num">{{ pres }}</td><td class="num">{{ real }}</td>
+      {% else %}<td class="num">{{ pres|brl }}</td><td class="num">{{ real|brl }}</td>{% endif %}</tr>{% endfor %}
+    </tbody></table></div></div>
+    <div class="card"><div class="card-header">Estimativa de transação</div><div class="card-body">
+    {% if a.rating_real == "C" or a.rating_real == "D" %}
+      <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+      <tr><td>Desconto estimado</td><td class="num text-success fw-bold">{{ a.desconto_estimado|brl }}</td></tr>
+      <tr><td>Valor após desconto</td><td class="num">{{ a.valor_apos_desconto|brl }}</td></tr>
+      <tr><td>Prazo máximo</td><td class="num">{{ a.prazo_maximo }} meses</td></tr>
+      <tr><td>Parcela estimada</td><td class="num">{{ a.parcela_estimada|brl }}</td></tr></tbody></table></div>
+      <div class="form-text">Desconto limitado a {{ a.parametros_usados.desconto_max|floatformat:"-2" }}% da dívida e nunca sobre o principal.</div>
+    {% else %}<p class="mb-0 text-muted">Com rating {{ a.rating_real }} a dívida é considerada recuperável e, em regra, não há desconto.</p>{% endif %}
+    </div></div>
+  </div>
+  <div class="col-lg-6"><div class="card"><div class="card-header">Memória de cálculo</div>
+    <div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+    <tr><td>(+) Receita bruta 12 meses</td><td class="num">{{ a.receita_bruta_12m|brl }}</td></tr>
+    <tr><td>(−) Custos e despesas</td><td class="num">{{ a.custos_despesas_12m|brl }}</td></tr>
+    <tr><td>(−) Parcelas de financiamento</td><td class="num">{{ a.parcelas_financiamento_12m|brl }}</td></tr>
+    <tr><td>(−) Outras dívidas</td><td class="num">{{ a.outras_dividas_12m|brl }}</td></tr>
+    <tr class="fw-bold"><td>(=) Resultado anual livre</td><td class="num {% if a.resultado_anual_livre < 0 %}text-danger{% endif %}">{{ a.resultado_anual_livre|brl }}</td></tr>
+    <tr><td>Geração futura ({{ a.parametros_usados.horizonte_anos }} anos)</td><td class="num">{{ a.geracao_futura|brl }}</td></tr>
+    <tr><td>Bens</td><td class="num">{{ a.patrimonio_total|brl }}</td></tr>
+    <tr><td>(−) Bens onerados</td><td class="num">{{ a.bens_onerados|brl }}</td></tr>
+    <tr><td>Patrimônio livre ({{ a.parametros_usados.percentual_realizacao_bens|floatformat:"-2" }}%)</td><td class="num">{{ a.patrimonio_livre|brl }}</td></tr>
+    <tr><td>Caixa e bancos</td><td class="num">{{ a.disponibilidades|brl }}</td></tr>
+    <tr class="fw-bold table-light"><td>CAPAG real</td><td class="num">{{ a.capag_real|brl }}</td></tr>
+    </tbody></table></div></div>
+    {% if a.justificativa %}<div class="card mt-3"><div class="card-header">Justificativa</div><div class="card-body small">{{ a.justificativa|linebreaksbr }}</div></div>{% endif %}
+  </div>
+</div>
+
+<div class="card mt-3"><div class="card-header">Envios desta análise</div>
+<div class="table-responsive"><table class="table table-sm mb-0 align-middle"><thead><tr><th>Data</th><th>Canal</th><th>Destino</th><th>Status</th><th>Usuário</th></tr></thead><tbody>
+{% for e in envios %}<tr><td>{{ e.enviado_em|date:"d/m/Y H:i" }}</td><td>{{ e.get_canal_display }}</td><td>{% if e.canal == "WHATSAPP" %}{{ e.destino|whatsapp_fmt }}{% else %}{{ e.destino }}{% endif %}</td>
+<td><span class="badge bg-{% if e.status == 'ERRO' %}danger{% elif e.status == 'LINK' %}secondary{% else %}success{% endif %}">{{ e.get_status_display }}</span></td><td>{{ e.usuario|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="5" class="text-muted text-center py-3">Ainda não enviada.</td></tr>{% endfor %}
+</tbody></table></div></div>
+
+<div class="modal fade" id="modalComposicao" tabindex="-1"><div class="modal-dialog modal-xl modal-dialog-scrollable"><div class="modal-content">
+  <div class="modal-header"><h5 class="modal-title">Composição dos indicadores</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+  <div class="modal-body bg-light">{% include "core/relatorios/_composicao.html" %}</div>
+  <div class="modal-footer"><a class="btn btn-outline-secondary" target="_blank" href="{% url 'relatorio_composicao_analise' a.pk %}?formato=pdf"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</a>
+    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Fechar</button></div>
+</div></div></div>
+{% endblock %}

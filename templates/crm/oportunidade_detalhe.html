@@ -1,0 +1,122 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}{{ contato.nome }} – {{ op.titulo }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div><h4 class="mb-0">{{ op.titulo }} <span class="badge text-bg-{{ op.etapa|etapa_cor }} align-middle fs-6">{{ op.get_etapa_display }}</span></h4>
+    <div class="text-muted"><a href="{{ contato.get_absolute_url }}">{{ contato.nome }}</a> · {{ op.get_area_display }}</div></div>
+  <a href="{% url 'crm:oportunidade_editar' op.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a>
+</div>
+
+{% if op.precisa_followup %}
+<div class="alert alert-danger"><i class="bi bi-telephone-outbound"></i> <b>Follow-up:</b> a proposta está com o cliente há {{ followup_dias }} dias sem novo contato.
+  Ligue para {{ contato.primeiro_nome }}{% if contato.whatsapp %} ({{ contato.whatsapp|whatsapp_fmt }}){% endif %} e registre o contato ao lado.</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3"><div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-calendar-event"></i> 1. Consulta inicial</span>
+      {% if op.aberta %}<a href="{% url 'crm:reuniao_nova' op.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Agendar consulta</a>{% endif %}</div>
+      <ul class="list-group list-group-flush">{% for r in reunioes %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between"><b>{{ r.inicio|date:"D, d/m/Y H:i" }}</b>
+            <span class="badge text-bg-{% if r.status == 'AGENDADA' %}info{% elif r.status == 'REALIZADA' %}success{% else %}secondary{% endif %} align-self-start">{{ r.get_status_display }}</span></div>
+          <div class="small text-muted">{{ r.advogado|nome_usuario }} · {{ r.get_modalidade_display }}{% if r.local %} · {{ r.local }}{% endif %}</div>
+          {% if r.observacoes %}<div class="small">{{ r.observacoes|linebreaksbr }}</div>{% endif %}
+          {% if r.status == "AGENDADA" %}
+          <div class="d-flex flex-wrap gap-1 mt-2">
+            <form method="post" action="{% url 'crm:reuniao_status' r.pk %}">{% csrf_token %}<button name="status" value="REALIZADA" class="btn btn-sm btn-outline-success">Realizada</button>
+              <button name="status" value="FALTOU" class="btn btn-sm btn-outline-secondary">Cliente faltou</button>
+              <button name="status" value="CANCELADA" class="btn btn-sm btn-outline-secondary">Cancelar</button></form>
+            <a href="{% url 'crm:reuniao_editar' r.pk %}" class="btn btn-sm btn-outline-secondary">Remarcar</a>
+            <form method="post" action="{% url 'crm:reuniao_lembrar' r.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary"><i class="bi bi-bell"></i> Lembrar agora</button></form>
+          </div>{% endif %}
+        </li>
+      {% empty %}<li class="list-group-item text-muted">Nenhuma consulta agendada.</li>{% endfor %}</ul>
+    </div>
+
+    {% if op.aberta %}
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-file-earmark-text"></i> 2. Proposta de honorários</div>
+      <form method="post" action="{% url 'crm:oportunidade_acao' op.pk 'proposta' %}" class="card-body">{% csrf_token %}
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">{% include "core/_field.html" with field=proposta_form.proposta_enviada_em %}</div>
+          <div class="col-md-4">{% include "core/_field.html" with field=proposta_form.valor_estimado %}</div>
+          <div class="col-md-4"><button class="btn btn-outline-primary w-100">{% if op.proposta_enviada_em %}Atualizar{% else %}Registrar envio{% endif %}</button></div>
+        </div>
+      </form>
+    </div>
+
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-pen"></i> 3. Fechamento – assinatura digital do contrato</div>
+      <div class="card-body">
+        <form method="post" action="{% url 'crm:oportunidade_acao' op.pk 'contrato' %}">{% csrf_token %}
+          <div class="row g-3 align-items-end">
+            <div class="col-md-8">{% include "core/_field.html" with field=contrato_form.contrato_link %}</div>
+            <div class="col-md-4"><button class="btn btn-outline-primary w-100">Salvar link</button></div>
+          </div>
+        </form>
+        {% if op.contrato_link %}
+        <hr>
+        <div class="d-flex flex-wrap gap-2 mb-3">
+          <a href="{{ op.contrato_link }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary"><i class="bi bi-box-arrow-up-right"></i> Abrir contrato</a>
+          {% if wame_contrato %}<a href="{{ wame_contrato }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-success"><i class="bi bi-whatsapp"></i> Enviar link pelo WhatsApp</a>{% endif %}
+          {% if contato.email %}<a href="mailto:{{ contato.email }}?subject=Contrato%20para%20assinatura%20digital&body={{ op.contrato_link|urlencode }}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-envelope"></i> Enviar por e-mail</a>{% endif %}
+          <span class="small text-muted align-self-center">registrado em {{ op.contrato_enviado_em|date:"d/m/Y" }}</span>
+        </div>
+        <form method="post" action="{% url 'crm:oportunidade_acao' op.pk 'assinado' %}">{% csrf_token %}
+          <div class="row g-3 align-items-end">
+            <div class="col-md-4">{% include "core/_field.html" with field=assinatura_form.contrato_assinado_em %}</div>
+            <div class="col-md-5"><button class="btn btn-success w-100"><i class="bi bi-check2-circle"></i> Contrato assinado – fechar</button></div>
+          </div>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="card"><div class="card-header text-danger"><i class="bi bi-x-circle"></i> Cliente desistiu?</div>
+      <form method="post" action="{% url 'crm:oportunidade_acao' op.pk 'perdido' %}" class="card-body">{% csrf_token %}
+        <div class="row g-3 align-items-end">
+          <div class="col-md-4">{% include "core/_field.html" with field=perda_form.motivo_perda %}</div>
+          <div class="col-md-5">{% include "core/_field.html" with field=perda_form.detalhe_perda %}</div>
+          <div class="col-md-3"><button class="btn btn-outline-danger w-100">Marcar perdido</button></div>
+        </div>
+      </form>
+    </div>
+    {% else %}
+    <div class="card"><div class="card-body">
+      {% if op.etapa == "FECHADO" %}
+        <p class="mb-1"><i class="bi bi-check2-circle text-success"></i> <b>Contrato assinado em {{ op.contrato_assinado_em|date:"d/m/Y" }}.</b></p>
+        <p class="mb-2"><a href="{% url 'juridico:pasta' contato.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-folder2-open"></i> Abrir a pasta do cliente</a>
+          <span class="small text-muted">processos, documentos e honorários</span></p>
+        <p class="mb-2 small text-muted">Tempo de maturação: {{ op.dias_maturacao }} dia(s) entre a entrada do contato e a assinatura.
+          {% if op.contrato_link %}<a href="{{ op.contrato_link }}" target="_blank" rel="noopener">Abrir contrato</a>{% endif %}</p>
+      {% else %}
+        <p class="mb-2"><i class="bi bi-x-circle text-danger"></i> <b>Perdido:</b> {{ op.get_motivo_perda_display }}{% if op.detalhe_perda %} – {{ op.detalhe_perda }}{% endif %}</p>
+      {% endif %}
+      <form method="post" action="{% url 'crm:oportunidade_acao' op.pk 'reabrir' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Reabrir atendimento</button></form>
+    </div></div>
+    {% endif %}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card mb-3"><div class="card-header">Resumo</div><div class="card-body small">
+      <p class="mb-1"><b>Responsável:</b> {{ op.responsavel|nome_usuario }}</p>
+      <p class="mb-1"><b>Entrada:</b> {{ op.aberto_em|date:"d/m/Y" }} · <b>Origem:</b> {{ contato.get_origem_display }}</p>
+      <p class="mb-1"><b>Honorários estimados:</b> {{ op.valor_estimado|brl }}</p>
+      {% if op.proposta_enviada_em %}<p class="mb-1"><b>Proposta enviada em:</b> {{ op.proposta_enviada_em|date:"d/m/Y" }}</p>{% endif %}
+      <p class="mb-1"><b>E-mail:</b> {{ contato.email|default:"—" }}</p>
+      <p class="mb-0"><b>WhatsApp:</b> {{ contato.whatsapp|whatsapp_fmt|default:"—" }}</p>
+    </div></div>
+    <div class="card"><div class="card-header"><i class="bi bi-chat-left-text"></i> Histórico de contatos</div>
+      <form method="post" action="{% url 'crm:interacao_nova' op.pk %}" class="card-body border-bottom">{% csrf_token %}
+        <div class="row g-2">
+          <div class="col-5">{{ interacao_form.tipo }}</div>
+          <div class="col-7"><button class="btn btn-outline-primary w-100">Registrar contato</button></div>
+          <div class="col-12">{{ interacao_form.descricao }}</div>
+        </div>
+      </form>
+      <ul class="list-group list-group-flush">{% for i in interacoes %}
+        <li class="list-group-item small"><b>{{ i.get_tipo_display }}</b> · {{ i.criado_em|date:"d/m/Y H:i" }} · {{ i.usuario|nome_usuario }}
+          <div>{{ i.descricao|linebreaksbr }}</div></li>
+      {% empty %}<li class="list-group-item text-muted small">Nenhum contato registrado.</li>{% endfor %}</ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

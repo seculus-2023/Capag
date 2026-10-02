@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}Funil de atendimentos{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h4 class="mb-0">Funil de atendimentos</h4>
+  <form class="d-flex gap-2 align-items-center">
+    <select name="area" class="form-select form-select-sm" onchange="this.form.submit()"><option value="">Todas as áreas</option>
+      {% for cod, nome in areas %}<option value="{{ cod }}"{% if cod == area %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
+    <div class="form-check text-nowrap"><input class="form-check-input" type="checkbox" name="meus" value="1" id="meus"{% if meus %} checked{% endif %} onchange="this.form.submit()">
+      <label class="form-check-label small" for="meus">só os meus</label></div>
+    <a href="{% url 'crm:contato_novo' %}" class="btn btn-primary btn-sm text-nowrap"><i class="bi bi-plus-lg"></i> Novo contato</a>
+  </form>
+</div>
+<div class="row g-2 flex-nowrap overflow-auto pb-2">
+  {% for col in colunas %}
+  <div class="col-10 col-md-4 col-xl"><div class="card h-100">
+    <div class="card-header border-top border-3 border-{{ col.cod|etapa_cor }}">{{ col.nome }} <span class="badge text-bg-light">{{ col.itens|length }}</span>
+      <div class="small fw-normal text-muted">{{ col.total|brl }}</div></div>
+    <div class="card-body p-2">{% for o in col.itens %}
+      <a href="{{ o.get_absolute_url }}" class="d-block border rounded p-2 mb-2 text-decoration-none text-body bg-white">
+        <div class="fw-semibold">{{ o.contato.nome|truncatechars:28 }}</div>
+        <div class="small text-muted">{{ o.titulo|truncatechars:40 }}</div>
+        <div class="small text-muted">{{ o.get_area_display }} · {{ o.responsavel|nome_usuario }}</div>
+        {% if o.precisa_followup %}<span class="badge text-bg-danger">follow-up: {{ o.dias_sem_contato }} dias</span>{% endif %}
+        {% if o.etapa == "PERDIDO" and o.motivo_perda %}<span class="badge text-bg-light">{{ o.get_motivo_perda_display }}</span>{% endif %}
+      </a>
+    {% empty %}<div class="text-muted small text-center py-3">—</div>{% endfor %}</div>
+  </div></div>
+  {% endfor %}
+</div>
+<p class="small text-muted mt-2">Contratos assinados e atendimentos perdidos aparecem aqui por 90 dias; o histórico completo está em Inteligência comercial.</p>
+{% endblock %}

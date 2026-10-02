@@ -1,0 +1,47 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}{{ p.titulo }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div style="min-width:0"><h4 class="mb-0">{{ p.titulo }}
+      <span class="badge text-bg-{% if p.status == 'ATIVO' %}success{% elif p.status == 'SUSPENSO' %}warning{% else %}secondary{% endif %} align-middle fs-6">{{ p.get_status_display }}</span></h4>
+    <div class="text-muted text-break">{{ p.numero|default:"Sem número" }} · <a href="{% url 'juridico:pasta' p.cliente.pk %}">{{ p.cliente.nome }}</a></div></div>
+  {% if pode.processos_editar %}<a href="{% url 'juridico:processo_editar' p.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a>{% endif %}
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3"><div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-alarm"></i> Prazos</span>
+      {% if pode.processos_editar %}<a href="{% url 'juridico:prazo_novo' p.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Novo prazo</a>{% endif %}</div>
+      <ul class="list-group list-group-flush">{% for pz in prazos %}{% include "juridico/_prazo.html" %}
+      {% empty %}<li class="list-group-item text-muted">Nenhum prazo lançado.</li>{% endfor %}</ul>
+    </div>
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-list-check"></i> Andamentos</div>
+      <form method="post" action="{% url 'juridico:andamento_novo' p.pk %}" class="card-body border-bottom">{% csrf_token %}
+        <div class="row g-2">
+          <div class="col-sm-4">{{ andamento_form.data }}</div>
+          <div class="col-sm-8"><button class="btn btn-outline-primary w-100">Lançar andamento</button></div>
+          <div class="col-12">{{ andamento_form.descricao }}</div>
+        </div>
+      </form>
+      <ul class="list-group list-group-flush">{% for a in andamentos %}
+        <li class="list-group-item small"><b>{{ a.data|date:"d/m/Y" }}</b> · {{ a.usuario|nome_usuario }}<div>{{ a.descricao|linebreaksbr }}</div></li>
+      {% empty %}<li class="list-group-item text-muted small">Nenhum andamento lançado.</li>{% endfor %}</ul>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card mb-3"><div class="card-header">Dados do processo</div><div class="card-body small">
+      <p class="mb-1"><b>Tipo:</b> {{ p.get_tipo_display }} · <b>Área:</b> {{ p.get_area_display }}</p>
+      <p class="mb-1"><b>Vara / órgão:</b> {{ p.orgao|default:"—" }}</p>
+      <p class="mb-1"><b>Cliente:</b> {{ p.cliente.nome }} ({{ p.get_posicao_display }})</p>
+      <p class="mb-1"><b>Parte contrária:</b> {{ p.parte_contraria|default:"—" }}</p>
+      <p class="mb-1"><b>Fase:</b> {{ p.fase|default:"—" }}</p>
+      <p class="mb-1"><b>Valor da causa:</b> {{ p.valor_causa|brl }}</p>
+      <p class="mb-1"><b>Distribuição:</b> {{ p.data_distribuicao|date:"d/m/Y"|default:"—" }}</p>
+      <p class="mb-1"><b>Responsável:</b> {{ p.responsavel|nome_usuario }}</p>
+      {% if p.observacoes %}<p class="mb-0 mt-2">{{ p.observacoes|linebreaksbr }}</p>{% endif %}
+    </div>
+    {% if pode.excluir and pode.processos_editar %}<div class="card-footer bg-white"><form method="post" action="{% url 'juridico:processo_excluir' p.pk %}" onsubmit="return confirm('Excluir o processo, os prazos e os andamentos?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Excluir processo</button></form></div>{% endif %}
+    </div>
+    {% if pode.documentos %}{% include "juridico/_documentos.html" with cliente_pk=p.cliente.pk ocultar_processo=True %}{% endif %}
+    {% if pode.financeiro %}{% include "juridico/_lancamentos.html" %}{% endif %}
+  </div>
+</div>
+{% endblock %}

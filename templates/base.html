@@ -1,0 +1,119 @@
+{% load static capag %}<!doctype html>
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}CAPAG{% endblock %} · Sistema CAPAG</title>
+<link rel="manifest" href="{% url 'pwa_manifest' %}">
+<meta name="theme-color" content="#000000">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="CAPAG">
+<link rel="apple-touch-icon" href="{% static 'pwa/apple-touch-icon.png' %}">
+<link rel="icon" type="image/png" sizes="192x192" href="{% static 'pwa/icon-192.png' %}">
+<link href="{% static 'vendor/bootstrap/bootstrap.min.css' %}" rel="stylesheet">
+<link href="{% static 'vendor/bootstrap-icons/bootstrap-icons.min.css' %}" rel="stylesheet">
+<style>
+  :root{--capag:#1F4E79}
+  body{background:#f4f6f9}
+  .navbar{background:#000!important}
+  .card{border:0;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+  .card-header{background:#fff;font-weight:600;color:var(--capag)}
+  .stat .num{font-size:1.8rem;font-weight:700;color:var(--capag)}
+  .money{font-variant-numeric:tabular-nums}
+  .table td.num,.table th.num{text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+  .rating-lg{font-size:2.2rem;width:3.4rem;height:3.4rem;display:inline-flex;align-items:center;justify-content:center}
+  .form-label{font-size:.85rem;color:#555;margin-bottom:.2rem}
+  .form-text{font-size:.75rem}
+</style>
+{% block head %}{% endblock %}
+</head>
+<body>
+{% if user.is_authenticated %}
+<nav class="navbar navbar-expand-lg navbar-dark mb-4">
+  <div class="container-fluid">
+    <a class="navbar-brand py-0" href="{% url 'dashboard' %}"><img src="{% static 'img/logo_menu.png' %}" alt="Caldato Consultoria e Assessoria" height="40" width="225"></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="nav">
+      <ul class="navbar-nav me-auto">
+        {% if pode.capag %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Painel</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'empresa_lista' %}">Empresas</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'analise_lista' %}">Análises</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'envio_lista' %}">Envios</a></li>
+        <li class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Relatórios</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'relatorio_ranking' %}"><i class="bi bi-bar-chart-steps"></i> Classificação por faixa</a></li>
+            <li><a class="dropdown-item" href="{% url 'relatorio_evolucao' %}"><i class="bi bi-graph-up"></i> Evolução histórica</a></li>
+            <li><a class="dropdown-item" href="{% url 'relatorio_composicao' %}"><i class="bi bi-calculator"></i> Composição dos indicadores</a></li>
+            <li><a class="dropdown-item" href="{% url 'relatorio_alertas' %}"><i class="bi bi-exclamation-triangle"></i> Alertas de risco</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{% url 'relatorios' %}">Todos os relatórios</a></li>
+          </ul></li>
+        {% endif %}
+        {% if pode.crm %}
+        <li class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">CRM</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'crm:painel' %}"><i class="bi bi-speedometer2"></i> Painel do advogado</a></li>
+            <li><a class="dropdown-item" href="{% url 'crm:contato_lista' %}"><i class="bi bi-person-lines-fill"></i> Contatos</a></li>
+            <li><a class="dropdown-item" href="{% url 'crm:funil' %}"><i class="bi bi-kanban"></i> Funil de atendimentos</a></li>
+            <li><a class="dropdown-item" href="{% url 'crm:conteudo_lista' %}"><i class="bi bi-envelope-paper"></i> Conteúdos informativos</a></li>
+            {% if pode.bi %}<li><a class="dropdown-item" href="{% url 'crm:relatorio' %}"><i class="bi bi-pie-chart"></i> Inteligência comercial</a></li>{% endif %}
+            <li><a class="dropdown-item" href="{% url 'crm:pesquisa_lista' %}"><i class="bi bi-geo-alt"></i> Pesquisa de mercado (mapa)</a></li>
+            <li><hr class="dropdown-divider"></li>
+            <li><a class="dropdown-item" href="{% url 'crm:atualizacoes' %}"><i class="bi bi-newspaper"></i> Atualizações jurídicas</a></li>
+          </ul></li>
+        {% endif %}
+        {% if pode.processos or pode.financeiro %}
+        <li class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Jurídico</a>
+          <ul class="dropdown-menu">
+            {% if pode.processos %}<li><a class="dropdown-item" href="{% url 'juridico:agenda' %}"><i class="bi bi-alarm"></i> Prazos</a></li>
+            <li><a class="dropdown-item" href="{% url 'juridico:processo_lista' %}"><i class="bi bi-journal-text"></i> Processos</a></li>{% endif %}
+            {% if pode.financeiro %}<li><a class="dropdown-item" href="{% url 'juridico:financeiro' %}"><i class="bi bi-cash-coin"></i> Financeiro</a></li>{% endif %}
+          </ul></li>
+        {% endif %}
+        {% if pode.administrar %}<li class="nav-item"><a class="nav-link" href="{% url 'parametros' %}">Parâmetros</a></li>{% endif %}
+      </ul>
+      <div class="dropdown">
+        <a class="nav-link text-white dropdown-toggle d-flex align-items-center gap-1 mw-100" href="#" data-bs-toggle="dropdown"><i class="bi bi-person-circle"></i> <span class="text-truncate" style="max-width:14rem">{{ user.get_full_name|default:user.username }}</span></a>
+        <ul class="dropdown-menu dropdown-menu-end">
+          <li><span class="dropdown-item-text small text-muted">Perfil: {{ perfil_nome }}</span></li>
+          <li><a class="dropdown-item" href="{% url 'senha' %}">Alterar senha</a></li>
+          {% if pode.administrar %}<li><a class="dropdown-item" href="{% url 'usuarios' %}">Usuários e perfis</a></li>{% endif %}
+          {% if user.is_staff %}<li><a class="dropdown-item" href="{% url 'admin:index' %}">Administração</a></li>{% endif %}
+          <li><hr class="dropdown-divider"></li>
+          <li><form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="dropdown-item text-danger">Sair</button></form></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
+{% endif %}
+<main class="container-xl pb-5">
+  {% for m in messages %}
+  <div class="alert alert-{% if m.tags == 'error' %}danger{% else %}{{ m.tags|default:'info' }}{% endif %} alert-dismissible fade show">{{ m }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>
+  {% endfor %}
+  {% block content %}{% endblock %}
+</main>
+<script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+<script>
+// máscara de dinheiro pt-BR: digita só números, formata 1.234,56
+document.querySelectorAll('input.money').forEach(function(el){
+  function fmt(v){v=(v||'').replace(/\D/g,'');if(!v)return '';v=(parseInt(v,10)/100).toFixed(2);
+    var p=v.split('.');return p[0].replace(/\B(?=(\d{3})+(?!\d))/g,'.')+','+p[1];}
+  if(el.value && el.value.indexOf(',')<0 && el.value.indexOf('.')>=0){el.value=fmt(parseFloat(el.value).toFixed(2));}
+  el.addEventListener('input',function(){el.value=fmt(el.value);});
+});
+// máscara CNPJ
+document.querySelectorAll('input[data-mask=cnpj]').forEach(function(el){
+  el.addEventListener('input',function(){var v=el.value.replace(/\D/g,'').slice(0,14);
+    v=v.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3')
+       .replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2');el.value=v;});
+});
+</script>
+<script>
+// PWA: registra o service worker (instalação como aplicativo e aviso de "sem conexão")
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('{% url "pwa_sw" %}').catch(function(){});});}
+</script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

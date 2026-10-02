@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block title %}Informativos{% endblock %}
+{% block content %}
+<div class="row justify-content-center mt-5"><div class="col-md-6"><div class="card"><div class="card-body text-center">
+{% if feito %}
+  <h5>Pronto.</h5><p class="mb-0">Você não receberá mais os nossos informativos.</p>
+{% else %}
+  <h5>Deixar de receber os informativos?</h5>
+  <p class="text-muted">{{ contato.email }}</p>
+  <form method="post">{% csrf_token %}<button class="btn btn-primary">Confirmar</button></form>
+{% endif %}
+</div></div></div></div>
+{% endblock %}

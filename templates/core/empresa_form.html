@@ -1,0 +1,42 @@
+{% extends "base.html" %}{% block title %}{% if empresa %}Editar{% else %}Nova{% endif %} empresa{% endblock %}
+{% block content %}
+<h4 class="mb-3">{% if empresa %}Editar empresa{% else %}Nova empresa{% endif %}</h4>
+<form method="post" class="card"><div class="card-body">{% csrf_token %}
+{% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+<div class="row g-3">
+  <div class="col-md-4">{% include "core/_field.html" with field=form.cnpj %}
+    <button type="button" id="btnCnpj" class="btn btn-sm btn-outline-primary mt-1"><i class="bi bi-cloud-download"></i> Buscar dados na Receita</button>
+    <span id="cnpjMsg" class="small ms-1"></span></div>
+  <div class="col-md-8">{% include "core/_field.html" with field=form.razao_social %}</div>
+  <div class="col-md-5">{% include "core/_field.html" with field=form.nome_fantasia %}</div>
+  <div class="col-md-3">{% include "core/_field.html" with field=form.porte %}</div>
+  <div class="col-md-4">{% include "core/_field.html" with field=form.atividade %}</div>
+  <div class="col-md-7">{% include "core/_field.html" with field=form.endereco %}</div>
+  <div class="col-md-4">{% include "core/_field.html" with field=form.municipio %}</div>
+  <div class="col-md-1">{% include "core/_field.html" with field=form.uf %}</div>
+  <div class="col-md-4">{% include "core/_field.html" with field=form.responsavel %}</div>
+  <div class="col-md-4">{% include "core/_field.html" with field=form.email %}</div>
+  <div class="col-md-4">{% include "core/_field.html" with field=form.whatsapp %}</div>
+  <div class="col-12">{% include "core/_field.html" with field=form.observacoes %}</div>
+</div></div>
+<div class="card-footer bg-white d-flex gap-2">
+  <button class="btn btn-primary">Salvar</button>
+  <a href="{% if empresa %}{{ empresa.get_absolute_url }}{% else %}{% url 'empresa_lista' %}{% endif %}" class="btn btn-link">Cancelar</a>
+</div></form>
+{% endblock %}
+{% block scripts %}
+<script>
+document.getElementById('btnCnpj').addEventListener('click', async function(){
+  const msg=document.getElementById('cnpjMsg'); const cnpj=document.getElementById('id_cnpj').value;
+  msg.className='small ms-1 text-muted'; msg.textContent='consultando...';
+  try{
+    const r=await fetch('{% url "consulta_cnpj" %}?cnpj='+encodeURIComponent(cnpj)); const d=await r.json();
+    if(!r.ok){msg.className='small ms-1 text-danger'; msg.textContent=d.erro; return;}
+    for(const k of ['razao_social','nome_fantasia','atividade','endereco','municipio','uf','responsavel','email','porte']){
+      const el=document.getElementById('id_'+k); if(el && d[k] && (k==='porte' || !el.value.trim())) el.value=d[k];
+    }
+    msg.className='small ms-1 text-success'; msg.textContent='dados preenchidos';
+  }catch(e){msg.className='small ms-1 text-danger'; msg.textContent='falha na consulta';}
+});
+</script>
+{% endblock %}

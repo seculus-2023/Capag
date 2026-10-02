@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% load crm_tags %}{% block title %}Processos{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h4 class="mb-0">Processos</h4>
+  <div class="d-flex gap-2">
+    <a href="{% url 'juridico:agenda' %}" class="btn btn-outline-secondary"><i class="bi bi-alarm"></i> Prazos</a>
+    {% if pode.processos_editar %}<a href="{% url 'juridico:processo_novo' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Novo processo</a>{% endif %}
+  </div>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-12 col-md"><input name="q" value="{{ q }}" class="form-control" placeholder="Número, assunto, cliente, parte contrária ou órgão"></div>
+  <div class="col-6 col-md-auto"><select name="area" class="form-select"><option value="">Todas as áreas</option>
+    {% for cod, nome in areas %}<option value="{{ cod }}"{% if cod == area %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-auto"><select name="status" class="form-select"><option value="">Todas as situações</option>
+    {% for cod, nome in status_choices %}<option value="{{ cod }}"{% if cod == status %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select></div>
+  <div class="col-auto d-flex align-items-center"><div class="form-check"><input class="form-check-input" type="checkbox" name="meus" value="1" id="meus"{% if meus %} checked{% endif %}>
+    <label class="form-check-label small" for="meus">só os meus</label></div></div>
+  <div class="col-auto"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+<thead><tr><th>Processo</th><th>Cliente</th><th>Vara / órgão</th><th>Área</th><th>Responsável</th><th class="text-center">Prazos</th><th>Situação</th></tr></thead>
+<tbody>{% for p in page %}
+<tr style="cursor:pointer" onclick="location='{{ p.get_absolute_url }}'"><td>{{ p.titulo|truncatechars:45 }}<div class="small text-muted text-nowrap">{{ p.numero|default:"sem número" }} · {{ p.get_tipo_display }}</div></td>
+<td>{{ p.cliente.nome|truncatechars:32 }}</td><td class="small">{{ p.orgao|default:"—" }}</td><td class="small">{{ p.get_area_display }}</td>
+<td>{{ p.responsavel|nome_usuario }}</td>
+<td class="text-center">{% if p.n_prazos %}<span class="badge text-bg-warning">{{ p.n_prazos }}</span>{% else %}—{% endif %}</td>
+<td><span class="badge text-bg-{% if p.status == 'ATIVO' %}success{% elif p.status == 'SUSPENSO' %}warning{% else %}secondary{% endif %}">{{ p.get_status_display }}</span></td></tr>
+{% empty %}<tr><td colspan="7" class="text-center text-muted py-4">Nenhum processo encontrado.</td></tr>{% endfor %}</tbody>
+</table></div><div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Classificação por faixa{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div><h4 class="mb-0">Classificação geral por faixa</h4>
+    <div class="text-muted small">Última análise de cada empresa ativa{% if ano %} em {{ ano }}{% endif %}, ordenada pela relação CAPAG ÷ dívida.</div></div>
+  <a class="btn btn-outline-secondary" href="?{{ request.GET.urlencode }}&formato=csv"><i class="bi bi-filetype-csv"></i> Exportar CSV</a>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-4"><input name="setor" value="{{ setor }}" list="setores" class="form-control" placeholder="Setor de atividade">
+    <datalist id="setores">{% for s in setores %}<option value="{{ s }}">{% endfor %}</datalist></div>
+  <div class="col-6 col-md-2"><select name="ano" class="form-select"><option value="">Ano fiscal</option>{% for y in anos %}<option {% if ano == y %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><select name="faixa" class="form-select"><option value="">Faixa</option>{% for r in "ABCD" %}<option {% if faixa == r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><select name="porte" class="form-select"><option value="">Porte</option>{% for v,l in portes %}<option value="{{ v }}" {% if porte == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><button class="btn btn-outline-secondary w-100"><i class="bi bi-funnel"></i> Filtrar</button></div>
+</form>
+
+<div class="row g-3 mb-3">
+  {% for r, n, pct in resumo %}
+  <div class="col-6 col-md-3"><a href="#faixa-{{ r }}" class="card p-3 text-decoration-none text-body h-100">
+    <div class="d-flex align-items-center gap-3">{% rating r True %}
+      <div><div class="fs-4 fw-bold">{{ n }}</div><div class="small text-muted">{{ pct }}% das empresas</div></div></div>
+    <div class="progress mt-2" style="height:6px"><div class="progress-bar bg-{{ r|rating_cor }}" style="width:{{ pct }}%"></div></div>
+  </a></div>
+  {% endfor %}
+</div>
+<div class="small text-muted mb-3"><span class="badge bg-success">A</span> e <span class="badge bg-info">B</span>: boa saúde financeira ·
+  <span class="badge bg-warning">C</span>: difícil recuperação · <span class="badge bg-danger">D</span>: alto risco de crédito / insolvência</div>
+
+{% for r, lista in grupos.items %}
+<div class="card mb-3" id="faixa-{{ r }}"><div class="card-header d-flex align-items-center gap-2">{% rating r %} Faixa {{ r }} <span class="text-muted fw-normal small">· {{ lista|length }} empresa(s)</span></div>
+<div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
+<thead><tr><th>#</th><th>Empresa</th><th>Setor</th><th>Data ref.</th><th class="num">Dívida</th><th class="num">CAPAG real</th><th class="num">CAPAG ÷ dívida</th>
+<th class="num">Endivid.</th><th class="num">Poupança</th><th class="num">Liquidez</th><th class="text-center">PGFN</th></tr></thead>
+<tbody>{% for a in lista %}
+<tr style="cursor:pointer" onclick="location='{{ a.get_absolute_url }}'"><td class="text-muted">{{ forloop.counter }}</td>
+<td>{{ a.empresa.razao_social|truncatechars:36 }}<div class="small text-muted">{{ a.empresa.cnpj }}</div></td>
+<td class="small">{{ a.empresa.atividade|default:"—"|truncatechars:28 }}</td><td>{{ a.data_referencia|date:"d/m/Y" }}</td>
+<td class="num">{{ a.divida_total|brl }}</td><td class="num">{{ a.capag_real|brl }}</td><td class="num fw-bold">{{ a.razao|floatformat:2|default:"—" }}{% if a.razao is not None %}×{% endif %}</td>
+{% for k in "endividamento poupanca liquidez"|split %}{% with i=a.ind|get_item:k %}<td class="num text-{{ i.cor }}">{{ i.texto }}</td>{% endwith %}{% endfor %}
+<td class="text-center">{% rating a.rating_pgfn %}</td></tr>
+{% empty %}<tr><td colspan="11" class="text-center text-muted py-3">Nenhuma empresa nesta faixa.</td></tr>{% endfor %}</tbody>
+</table></div></div>
+{% endfor %}
+{% endblock %}

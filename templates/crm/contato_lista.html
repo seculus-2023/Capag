@@ -1,0 +1,21 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}Contatos{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Contatos</h4>
+  <a href="{% url 'crm:contato_novo' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Novo contato</a>
+</div>
+<form class="mb-3"><div class="input-group">
+  <input name="q" value="{{ q }}" class="form-control" placeholder="Buscar por nome, e-mail, documento, WhatsApp ou município">
+  <select name="area" class="form-select" style="max-width:16rem"><option value="">Todas as áreas</option>
+    {% for cod, nome in areas %}<option value="{{ cod }}"{% if cod == area %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
+  <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div></form>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+<thead><tr><th>Nome</th><th>Contato</th><th>Área de interesse</th><th>Origem</th><th>Responsável</th><th class="text-center">Atendimentos</th></tr></thead>
+<tbody>{% for c in page %}
+<tr style="cursor:pointer" onclick="location='{{ c.get_absolute_url }}'"><td>{{ c.nome }}{% if c.municipio %}<div class="small text-muted">{{ c.municipio }}{% if c.uf %}/{{ c.uf }}{% endif %}</div>{% endif %}</td>
+<td class="small">{% if c.email %}<div><i class="bi bi-envelope"></i> {{ c.email }}</div>{% endif %}{% if c.whatsapp %}<div><i class="bi bi-whatsapp text-success"></i> {{ c.whatsapp|whatsapp_fmt }}</div>{% endif %}</td>
+<td>{{ c.get_area_interesse_display }}</td><td>{{ c.get_origem_display }}</td><td>{{ c.responsavel|nome_usuario }}</td>
+<td class="text-center">{{ c.n_ops }}</td></tr>
+{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhum contato encontrado.</td></tr>{% endfor %}</tbody>
+</table></div><div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div>
+{% endblock %}

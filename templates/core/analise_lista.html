@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Análises{% endblock %}
+{% block content %}
+<h4 class="mb-3">Análises de CAPAG</h4>
+<form class="row g-2 mb-3">
+  <div class="col-md-6"><input name="q" value="{{ q }}" class="form-control" placeholder="Empresa, CNPJ ou descrição"></div>
+  <div class="col-6 col-md-2"><select name="rating" class="form-select"><option value="">Rating real</option>{% for r in "ABCD" %}<option {% if rating == r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><select name="status" class="form-select"><option value="">Status</option>{% for v,l in status_choices %}<option value="{{ v }}" {% if status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100"><i class="bi bi-funnel"></i> Filtrar</button></div>
+</form>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+<thead><tr><th>Empresa</th><th>Data</th><th class="num">Dívida</th><th class="num">CAPAG presumida</th><th class="num">CAPAG real</th><th class="text-center">PGFN</th><th class="text-center">Real</th><th class="num">Desconto est.</th><th>Status</th></tr></thead>
+<tbody>{% for a in page %}
+<tr style="cursor:pointer" onclick="location='{{ a.get_absolute_url }}'"><td>{{ a.empresa.razao_social|truncatechars:34 }}<div class="small text-muted">{{ a.empresa.cnpj }}</div></td>
+<td>{{ a.data_referencia|date:"d/m/Y" }}</td><td class="num">{{ a.divida_total|brl }}</td><td class="num">{{ a.capag_presumida|brl }}</td><td class="num">{{ a.capag_real|brl }}</td>
+<td class="text-center">{% rating a.rating_pgfn %}</td><td class="text-center">{% rating a.rating_real %}</td><td class="num">{{ a.desconto_estimado|brl }}</td>
+<td><span class="badge text-bg-light">{{ a.get_status_display }}</span></td></tr>
+{% empty %}<tr><td colspan="9" class="text-center text-muted py-4">Nenhuma análise encontrada.</td></tr>{% endfor %}</tbody>
+</table></div><div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div>
+{% endblock %}

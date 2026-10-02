@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% block title %}Análise de CAPAG{% endblock %}
+{% block content %}
+<div class="mb-3"><h4 class="mb-0">{% if analise %}Editar análise de CAPAG{% else %}Nova análise de CAPAG{% endif %}</h4>
+<div class="text-muted">{{ empresa.razao_social }} · {{ empresa.cnpj }} · {{ empresa.get_porte_display }}</div></div>
+<form method="post">{% csrf_token %}
+{% if form.errors %}<div class="alert alert-danger">Corrija os campos destacados.</div>{% endif %}
+<div class="row g-3">
+{% for titulo, campos in form.grupos %}
+  <div class="{% if forloop.last %}col-12{% else %}col-lg-6{% endif %}"><div class="card h-100"><div class="card-header">{{ titulo }}</div><div class="card-body"><div class="row g-2">
+    {% for f in campos %}<div class="{% if f.name == 'justificativa' or f.name == 'descricao' %}col-12{% else %}col-md-6{% endif %}">{% include "core/_field.html" with field=f %}</div>{% endfor %}
+  </div></div></div></div>
+{% endfor %}
+</div>
+<div class="alert alert-light border mt-3 small mb-3"><i class="bi bi-info-circle"></i>
+CAPAG real = (receita − custos − parcelas − outras dívidas) × horizonte (anos) + (bens − bens onerados) × % de realização + caixa.
+O rating compara a CAPAG com a dívida total. Os fatores ficam em <b>Parâmetros</b>.</div>
+<div class="d-flex gap-2"><button class="btn btn-primary"><i class="bi bi-calculator"></i> Calcular e salvar</button>
+<a href="{% if analise %}{{ analise.get_absolute_url }}{% else %}{{ empresa.get_absolute_url }}{% endif %}" class="btn btn-link">Cancelar</a></div>
+</form>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block title %}Parâmetros{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8">
+<h4 class="mb-3">Parâmetros do cálculo</h4>
+<div class="alert alert-warning small"><i class="bi bi-exclamation-triangle"></i> Os valores padrão são referências para simulação. Confira a metodologia e a portaria da PGFN vigentes. Alterações valem para novas análises; use <b>Recalcular</b> nas antigas.</div>
+<form method="post" class="card"><div class="card-body">{% csrf_token %}<div class="row g-3">
+{% for f in form %}<div class="col-md-6">{% include "core/_field.html" with field=f %}</div>{% endfor %}
+</div></div><div class="card-footer bg-white"><button class="btn btn-primary">Salvar parâmetros</button></div></form>
+</div></div>
+{% endblock %}

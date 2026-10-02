@@ -1,0 +1,25 @@
+{% load crm_tags %}
+<div class="card mb-3"><div class="card-header"><i class="bi bi-folder2-open"></i> Documentos <span class="badge text-bg-light">{{ documentos|length }}</span></div>
+  <form method="post" enctype="multipart/form-data" action="{% url 'juridico:documento_novo' cliente_pk %}" class="card-body border-bottom">{% csrf_token %}
+    <input type="hidden" name="next" value="{{ request.get_full_path }}">
+    <div class="row g-2 align-items-end">
+      <div class="col-12">{{ documento_form.arquivo }}</div>
+      <div class="col-12"><input type="text" name="titulo" maxlength="200" class="form-control" placeholder="Título (opcional)" id="id_titulo"></div>
+      <div class="col-sm-6">{{ documento_form.categoria }}</div>
+      <div class="col-sm-6">{{ documento_form.processo }}</div>
+      <div class="col-12"><button class="btn btn-outline-primary"><i class="bi bi-upload"></i> Guardar documento</button></div>
+    </div>
+    <div class="form-text">PDF, Word, Excel, imagem ou ZIP, até 25 MB. Título em branco = nome do arquivo.</div>
+  </form>
+  <ul class="list-group list-group-flush">{% for d in documentos %}
+    <li class="list-group-item d-flex gap-2 align-items-start">
+      <div class="flex-grow-1 text-break" style="min-width:0">
+        <a href="{% url 'juridico:documento_baixar' d.pk %}" class="text-decoration-none"><i class="bi bi-file-earmark-arrow-down"></i> {{ d }}</a>
+        <div class="small text-muted">{{ d.get_categoria_display }} · {{ d.tamanho|filesizeformat }} · {{ d.criado_em|date:"d/m/Y H:i" }} · {{ d.enviado_por|nome_usuario }}
+          {% if d.processo and not ocultar_processo %} · <a href="{{ d.processo.get_absolute_url }}">{{ d.processo.numero|default:d.processo.titulo }}</a>{% endif %}</div>
+      </div>
+      {% if pode.excluir %}<form method="post" action="{% url 'juridico:documento_excluir' d.pk %}" onsubmit="return confirm('Excluir este documento? O arquivo será apagado.')">{% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.get_full_path }}"><button class="btn btn-sm btn-outline-danger" title="Excluir"><i class="bi bi-trash"></i></button></form>{% endif %}
+    </li>
+  {% empty %}<li class="list-group-item text-muted">Nenhum documento guardado.</li>{% endfor %}</ul>
+</div>

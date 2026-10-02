@@ -1,0 +1,19 @@
+{% load crm_tags %}
+<li class="list-group-item">
+  <div class="d-flex justify-content-between gap-2">
+    <div style="min-width:0"><b>{{ pz.data_limite|date:"D, d/m/Y" }}{% if pz.hora %} {{ pz.hora|time:"H:i" }}{% endif %}</b> · {{ pz.descricao }}
+      <div class="small text-muted">{{ pz.get_tipo_display }} · {{ pz.responsavel|nome_usuario }}
+        {% if mostrar_processo %} · <a href="{{ pz.processo.get_absolute_url }}">{{ pz.processo.cliente.nome|truncatechars:30 }} – {{ pz.processo.numero|default:pz.processo.titulo|truncatechars:40 }}</a>{% endif %}</div>
+      {% if pz.observacoes %}<div class="small">{{ pz.observacoes|linebreaksbr }}</div>{% endif %}</div>
+    <span class="badge text-bg-{{ pz.situacao.1 }} align-self-start text-nowrap">
+      {% if pz.status != "PENDENTE" %}{{ pz.get_status_display }}{% elif pz.dias_restantes < 0 %}vencido há {{ pz.dias_restantes|cut:"-" }} dia(s){% elif pz.dias_restantes == 0 %}hoje{% else %}{{ pz.dias_restantes }} dia(s){% endif %}</span>
+  </div>
+  {% if pode.processos_editar %}
+  <div class="d-flex flex-wrap gap-1 mt-2">
+    <form method="post" action="{% url 'juridico:prazo_status' pz.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+      {% if pz.status == "PENDENTE" %}<button name="status" value="CUMPRIDO" class="btn btn-sm btn-outline-success"><i class="bi bi-check2"></i> Cumprido</button>
+      <button name="status" value="CANCELADO" class="btn btn-sm btn-outline-secondary">Cancelar</button>
+      {% else %}<button name="status" value="PENDENTE" class="btn btn-sm btn-outline-secondary">Reabrir</button>{% endif %}</form>
+    {% if pz.status == "PENDENTE" %}<a href="{% url 'juridico:prazo_editar' pz.pk %}" class="btn btn-sm btn-outline-secondary">Editar</a>{% endif %}
+  </div>{% endif %}
+</li>

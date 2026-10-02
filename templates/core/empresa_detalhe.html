@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% load capag %}{% block title %}{{ empresa.razao_social }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div><h4 class="mb-0">{{ empresa.razao_social }}</h4><div class="text-muted">{{ empresa.cnpj }} · {{ empresa.get_porte_display }}</div></div>
+  <div class="d-flex gap-2">
+    <a href="{% url 'analise_nova' empresa.pk %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nova análise de CAPAG</a>
+    <a href="{% url 'crm:contato_novo' %}?empresa={{ empresa.pk }}" class="btn btn-outline-secondary"><i class="bi bi-person-plus"></i> Contato no CRM</a>
+    <a href="{% url 'empresa_editar' empresa.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-4"><div class="card"><div class="card-header">Cadastro</div><div class="card-body small">
+    {% if empresa.nome_fantasia %}<p class="mb-1"><b>Fantasia:</b> {{ empresa.nome_fantasia }}</p>{% endif %}
+    {% if empresa.atividade %}<p class="mb-1"><b>Atividade:</b> {{ empresa.atividade }}</p>{% endif %}
+    {% if empresa.endereco %}<p class="mb-1"><b>Endereço:</b> {{ empresa.endereco }}</p>{% endif %}
+    {% if empresa.municipio %}<p class="mb-1"><b>Município:</b> {{ empresa.municipio }}/{{ empresa.uf }}</p>{% endif %}
+    {% if empresa.responsavel %}<p class="mb-1"><b>Responsável:</b> {{ empresa.responsavel }}</p>{% endif %}
+    <p class="mb-1"><b>E-mail:</b> {{ empresa.email|default:"—" }}</p>
+    <p class="mb-1"><b>WhatsApp:</b> {{ empresa.whatsapp|whatsapp_fmt|default:"—" }}</p>
+    {% if empresa.observacoes %}<p class="mb-0 mt-2">{{ empresa.observacoes|linebreaksbr }}</p>{% endif %}
+  </div>
+  {% if pode.excluir %}<div class="card-footer bg-white"><form method="post" action="{% url 'empresa_excluir' empresa.pk %}" onsubmit="return confirm('Excluir a empresa e todas as análises?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Excluir empresa</button></form></div>{% endif %}
+  </div></div>
+  <div class="col-lg-8"><div class="card"><div class="card-header">Histórico de CAPAG</div>
+  <div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+    <thead><tr><th>Data</th><th>Descrição</th><th class="num">Dívida</th><th class="num">CAPAG presumida</th><th class="num">CAPAG real</th><th class="text-center">PGFN</th><th class="text-center">Real</th><th>Status</th></tr></thead>
+    <tbody>{% for a in analises %}
+    <tr style="cursor:pointer" onclick="location='{{ a.get_absolute_url }}'"><td>{{ a.data_referencia|date:"d/m/Y" }}</td><td>{{ a.descricao|default:"—"|truncatechars:30 }}</td>
+      <td class="num">{{ a.divida_total|brl }}</td><td class="num">{{ a.capag_presumida|brl }}</td><td class="num">{{ a.capag_real|brl }}</td>
+      <td class="text-center">{% rating a.rating_pgfn %}</td><td class="text-center">{% rating a.rating_real %}</td><td><span class="badge text-bg-light">{{ a.get_status_display }}</span></td></tr>
+    {% empty %}<tr><td colspan="8" class="text-center text-muted py-4">Nenhuma análise cadastrada.</td></tr>{% endfor %}</tbody>
+  </table></div></div></div>
+</div>
+{% endblock %}

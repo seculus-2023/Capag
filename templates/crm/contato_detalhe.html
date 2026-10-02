@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}{{ contato.nome }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div><h4 class="mb-0">{{ contato.nome }}</h4><div class="text-muted">{{ contato.get_tipo_display }}{% if contato.documento %} · {{ contato.documento }}{% endif %}</div></div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'juridico:pasta' contato.pk %}" class="btn btn-outline-primary"><i class="bi bi-folder2-open"></i> Pasta do cliente</a>
+    <a href="{% url 'crm:oportunidade_nova' contato.pk %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Novo atendimento</a>
+    <a href="{% url 'crm:contato_editar' contato.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a>
+  </div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-4"><div class="card"><div class="card-header">Cadastro</div><div class="card-body small">
+    <p class="mb-1"><b>E-mail:</b> {{ contato.email|default:"—" }}</p>
+    <p class="mb-1"><b>WhatsApp:</b> {{ contato.whatsapp|whatsapp_fmt|default:"—" }}</p>
+    {% if contato.municipio %}<p class="mb-1"><b>Município:</b> {{ contato.municipio }}{% if contato.uf %}/{{ contato.uf }}{% endif %}</p>{% endif %}
+    <p class="mb-1"><b>Área de interesse:</b> {{ contato.get_area_interesse_display }}</p>
+    <p class="mb-1"><b>Origem:</b> {{ contato.get_origem_display }}</p>
+    <p class="mb-1"><b>Responsável:</b> {{ contato.responsavel|nome_usuario }}</p>
+    {% if contato.empresa %}<p class="mb-1"><b>Empresa (CAPAG):</b> <a href="{{ contato.empresa.get_absolute_url }}">{{ contato.empresa.razao_social }}</a></p>{% endif %}
+    <p class="mb-1"><b>Conteúdos informativos:</b>
+      {% if contato.aceita_conteudo %}<span class="badge text-bg-success">autorizou em {{ contato.consentimento_em|date:"d/m/Y" }}</span>{% else %}<span class="badge text-bg-light">não autorizou</span>{% endif %}</p>
+    {% if contato.observacoes %}<p class="mb-0 mt-2">{{ contato.observacoes|linebreaksbr }}</p>{% endif %}
+  </div>
+  {% if pode.excluir %}<div class="card-footer bg-white"><form method="post" action="{% url 'crm:contato_excluir' contato.pk %}" onsubmit="return confirm('Excluir o contato e todos os atendimentos?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Excluir contato</button></form></div>{% endif %}
+  </div></div>
+  <div class="col-lg-8"><div class="card mb-3"><div class="card-header">Atendimentos</div>
+  <div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+    <thead><tr><th>Entrada</th><th>Assunto</th><th>Área</th><th>Responsável</th><th class="num">Honorários</th><th>Etapa</th></tr></thead>
+    <tbody>{% for o in oportunidades %}
+    <tr style="cursor:pointer" onclick="location='{{ o.get_absolute_url }}'"><td>{{ o.aberto_em|date:"d/m/Y" }}</td><td>{{ o.titulo|truncatechars:40 }}</td>
+      <td>{{ o.get_area_display }}</td><td>{{ o.responsavel|nome_usuario }}</td><td class="num">{{ o.valor_estimado|brl }}</td>
+      <td><span class="badge text-bg-{{ o.etapa|etapa_cor }}">{{ o.get_etapa_display }}</span></td></tr>
+    {% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhum atendimento.</td></tr>{% endfor %}</tbody>
+  </table></div></div>
+  <div class="card"><div class="card-header">Mensagens automáticas enviadas</div>
+  <div class="table-responsive"><table class="table table-sm mb-0 align-middle">
+    <thead><tr><th>Data</th><th>Tipo</th><th>Canal</th><th>Destino</th><th>Status</th></tr></thead>
+    <tbody>{% for m in mensagens %}
+    <tr><td>{{ m.enviado_em|date:"d/m/Y H:i" }}</td><td>{{ m.get_tipo_display }}{% if m.conteudo %}<div class="small text-muted">{{ m.conteudo.titulo|truncatechars:40 }}</div>{% endif %}</td>
+      <td>{{ m.get_canal_display }}</td><td>{{ m.destino }}</td>
+      <td><span class="badge text-bg-{% if m.status == 'ERRO' %}danger{% else %}success{% endif %}" title="{{ m.resposta|truncatechars:200 }}">{{ m.get_status_display }}</span></td></tr>
+    {% empty %}<tr><td colspan="5" class="text-center text-muted py-3">Nenhuma mensagem.</td></tr>{% endfor %}</tbody>
+  </table></div></div></div>
+</div>
+{% endblock %}

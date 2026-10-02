@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Empresas{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Empresas</h4>
+  <a href="{% url 'empresa_nova' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nova empresa</a>
+</div>
+<form class="mb-3"><div class="input-group"><input name="q" value="{{ q }}" class="form-control" placeholder="Buscar por razão social, CNPJ ou município"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div></form>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+<thead><tr><th>Razão social</th><th>CNPJ</th><th>Município</th><th>Contato</th><th class="text-center">Análises</th></tr></thead>
+<tbody>{% for e in page %}
+<tr style="cursor:pointer" onclick="location='{{ e.get_absolute_url }}'"><td>{{ e.razao_social }}{% if e.nome_fantasia %}<div class="small text-muted">{{ e.nome_fantasia }}</div>{% endif %}</td>
+<td class="text-nowrap">{{ e.cnpj }}</td><td>{{ e.municipio }}{% if e.uf %}/{{ e.uf }}{% endif %}</td>
+<td class="small">{% if e.email %}<div><i class="bi bi-envelope"></i> {{ e.email }}</div>{% endif %}{% if e.whatsapp %}<div><i class="bi bi-whatsapp text-success"></i> {{ e.whatsapp|whatsapp_fmt }}</div>{% endif %}</td>
+<td class="text-center">{{ e.n_analises }}</td></tr>
+{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Nenhuma empresa encontrada.</td></tr>{% endfor %}</tbody>
+</table></div><div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div>
+{% endblock %}

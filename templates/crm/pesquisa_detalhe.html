@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}Pesquisa de mercado{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div><h4 class="mb-0">{{ pesquisa.descricao }}</h4>
+    <div class="text-muted">{{ pesquisa.municipio }}/{{ pesquisa.uf }} · {{ pesquisa.total }} empresa(s) · {{ com_telefone }} com telefone · {{ pesquisa.criado_em|date:"d/m/Y H:i" }}</div></div>
+  <div class="d-flex gap-2">
+    <a href="?formato=csv" class="btn btn-primary"><i class="bi bi-download"></i> Exportar CSV</a>
+    <a href="{% url 'crm:pesquisa_lista' %}" class="btn btn-outline-secondary">Nova pesquisa</a>
+    <form method="post" action="{% url 'crm:pesquisa_excluir' pesquisa.pk %}" onsubmit="return confirm('Excluir esta pesquisa?')">{% csrf_token %}<button class="btn btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+  </div>
+</div>
+<div class="card"><div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
+<thead><tr><th>Nome</th><th>Tipo</th><th>Endereço</th><th>Telefone</th><th>E-mail / site</th><th></th></tr></thead>
+<tbody>{% for e in empresas %}
+<tr><td>{{ e.nome }}</td><td class="small">{{ e.tipo }}</td><td class="small">{{ e.endereco|default:"—" }}</td>
+<td class="small text-nowrap">{{ e.telefone|default:"—" }}</td>
+<td class="small">{% if e.email %}<div>{{ e.email }}</div>{% endif %}{% if e.site %}<a href="{{ e.site }}" target="_blank" rel="noopener nofollow">{{ e.site|truncatechars:40 }}</a>{% endif %}</td>
+<td class="text-end text-nowrap">{% if e.link_google_maps %}<a href="{{ e.link_google_maps }}" target="_blank" rel="noopener" class="btn btn-sm btn-outline-secondary" title="Abrir no mapa"><i class="bi bi-geo-alt"></i></a>{% endif %}</td></tr>
+{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhuma empresa encontrada nesta pesquisa.</td></tr>{% endfor %}</tbody>
+</table></div>
+<div class="card-footer bg-white small text-muted">Dados © colaboradores do OpenStreetMap (licença ODbL).</div></div>
+{% endblock %}

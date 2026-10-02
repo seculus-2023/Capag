@@ -1,0 +1,45 @@
+{% extends "base.html" %}{% block title %}Atualizações jurídicas{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <div><h4 class="mb-0">Atualizações jurídicas</h4>
+    <div class="small text-muted">Tributário federal (PGFN, Receita, CARF), tributário estadual (PGE, Sefaz, ICMS) e ambiental · {{ nao_lidas }} não lida(s)</div></div>
+  <div class="d-flex flex-wrap gap-2">
+    <form method="post" action="{% url 'crm:atualizacoes_lidas' %}">{% csrf_token %}<input type="hidden" name="area" value="{{ area }}">
+      <button class="btn btn-outline-secondary btn-sm">Marcar todas como lidas</button></form>
+    <form method="post" action="{% url 'crm:atualizacoes_excluir' %}" onsubmit="return confirm('Excluir todas as atualizações{% if area %} desta área{% endif %}? Esta ação não pode ser desfeita.')">{% csrf_token %}<input type="hidden" name="area" value="{{ area }}">
+      <button class="btn btn-outline-danger btn-sm"><i class="bi bi-trash"></i> Excluir todas</button></form>
+    <form method="post" action="{% url 'crm:atualizacoes_buscar' %}">{% csrf_token %}<button class="btn btn-primary btn-sm"><i class="bi bi-arrow-repeat"></i> Buscar agora</button></form>
+  </div>
+</div>
+<form class="mb-3"><div class="input-group">
+  <input name="q" value="{{ q }}" class="form-control" placeholder="Buscar no título ou no resumo (ex.: transação, ICMS, licenciamento)">
+  <select name="area" class="form-select" style="max-width:16rem"><option value="">Todas as áreas</option>
+    {% for cod, nome in areas %}<option value="{{ cod }}"{% if cod == area %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select>
+  <span class="input-group-text"><input class="form-check-input mt-0 me-1" type="checkbox" name="novas" value="1" id="novas"{% if so_novas %} checked{% endif %}><label for="novas" class="small">só não lidas</label></span>
+  <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div></form>
+
+<div class="row g-3">
+  <div class="col-lg-9"><div class="card"><ul class="list-group list-group-flush">{% for a in page %}
+    <li class="list-group-item d-flex gap-2{% if a.lida %} opacity-75{% endif %}">
+      <div class="flex-grow-1 text-break" style="min-width:0">
+        <a href="{{ a.link }}" target="_blank" rel="noopener" class="text-decoration-none {% if not a.lida %}fw-semibold{% endif %}">{{ a.titulo }}</a>
+        <div class="small text-muted">{{ a.get_area_display }} · {{ a.fonte.nome }} · {{ a.publicado_em|date:"d/m/Y H:i" }}</div>
+        {% if a.resumo %}<div class="small">{{ a.resumo|truncatechars:280 }}</div>{% endif %}
+      </div>
+      <form method="post" action="{% url 'crm:atualizacao_lida' a.pk %}">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="btn btn-sm btn-outline-secondary text-nowrap" title="{% if a.lida %}Marcar como não lida{% else %}Marcar como lida{% endif %}"><i class="bi bi-{% if a.lida %}envelope-open{% else %}check2{% endif %}"></i></button></form>
+      <form method="post" action="{% url 'crm:atualizacao_excluir' a.pk %}" onsubmit="return confirm('Excluir esta atualização?')">{% csrf_token %}<input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <button class="btn btn-sm btn-outline-danger" title="Excluir"><i class="bi bi-trash"></i></button></form>
+    </li>
+    {% empty %}<li class="list-group-item text-muted text-center py-4">Nenhuma atualização. Clique em “Buscar agora”.</li>{% endfor %}</ul>
+    <div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div></div>
+  <div class="col-lg-3"><div class="card"><div class="card-header">Fontes acompanhadas</div>
+    <ul class="list-group list-group-flush small">{% for f in fontes %}
+      <li class="list-group-item{% if not f.ativo %} text-muted{% endif %}">{{ f.nome }}
+        {% if f.ultimo_erro %}<span class="badge text-bg-danger" title="{{ f.ultimo_erro }}">falha</span>{% endif %}
+        <div class="text-muted">{{ f.get_area_display }}{% if f.ultima_leitura %} · lida em {{ f.ultima_leitura|date:"d/m H:i" }}{% endif %}</div></li>
+    {% empty %}<li class="list-group-item text-muted">As fontes padrão são criadas na primeira busca.</li>{% endfor %}</ul>
+    {% if user.is_staff %}<div class="card-footer bg-white"><a href="{% url 'admin:crm_fonte_changelist' %}" class="small">Gerenciar fontes</a></div>{% endif %}
+  </div></div>
+</div>
+{% endblock %}

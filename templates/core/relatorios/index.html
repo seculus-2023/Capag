@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block title %}Relatórios{% endblock %}
+{% block content %}
+<h4 class="mb-3">Relatórios</h4>
+<div class="row g-3">
+  {% url 'relatorio_ranking' as u1 %}{% url 'relatorio_evolucao' as u2 %}{% url 'relatorio_composicao' as u3 %}{% url 'relatorio_alertas' as u4 %}
+  <div class="col-md-6"><a href="{{ u1 }}" class="card p-3 h-100 text-decoration-none text-body">
+    <h6 class="text-primary"><i class="bi bi-bar-chart-steps"></i> Classificação geral por faixa</h6>
+    <p class="small text-muted mb-0">Ranking CAPAG: todas as empresas divididas pelas notas A, B, C e D, com filtros por setor, ano e faixa.</p></a></div>
+  <div class="col-md-6"><a href="{{ u2 }}" class="card p-3 h-100 text-decoration-none text-body">
+    <h6 class="text-primary"><i class="bi bi-graph-up"></i> Evolução histórica</h6>
+    <p class="small text-muted mb-0">Indicadores de uma empresa ano a ano: dívida × receita, liquidez, poupança e nota.</p></a></div>
+  <div class="col-md-6"><a href="{{ u3 }}" class="card p-3 h-100 text-decoration-none text-body">
+    <h6 class="text-primary"><i class="bi bi-calculator"></i> Composição dos indicadores</h6>
+    <p class="small text-muted mb-0">Passo a passo do cálculo da nota (endividamento, poupança corrente, liquidez), com PDF.</p></a></div>
+  <div class="col-md-6"><a href="{{ u4 }}" class="card p-3 h-100 text-decoration-none text-body">
+    <h6 class="text-primary"><i class="bi bi-exclamation-triangle"></i> Alertas de risco e inconsistências</h6>
+    <p class="small text-muted mb-0">Dados distorcidos ou zerados, indicadores críticos e rebaixamentos de nota entre anos.</p></a></div>
+</div>
+{% endblock %}

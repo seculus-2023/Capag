@@ -1,0 +1,56 @@
+{% extends "base.html" %}{% load capag l10n %}{% block title %}Evolução histórica{% endblock %}
+{% block content %}
+<h4 class="mb-0">Evolução histórica</h4>
+<div class="text-muted small mb-3">Análise plurianual: a última análise de cada ano da empresa.</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-6"><select name="empresa" class="form-select" required>
+    <option value="">Selecione a empresa…</option>
+    {% for e in empresas %}<option value="{{ e.pk }}" {% if empresa.pk == e.pk %}selected{% endif %}>{{ e.razao_social }} ({{ e.n }} análise{{ e.n|pluralize }})</option>{% endfor %}
+  </select></div>
+  <div class="col-6 col-md-2"><select name="ano_ini" class="form-select"><option value="">De</option>{% for y in anos %}<option {% if ano_ini == y %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><select name="ano_fim" class="form-select"><option value="">Até</option>{% for y in anos %}<option {% if ano_fim == y %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100"><i class="bi bi-graph-up"></i> Gerar</button></div>
+</form>
+
+{% if empresa %}
+{% if linhas %}
+{% if variacoes %}
+<div class="row g-3 mb-3">
+  {% for nome, ini, fim, tend in variacoes %}
+  <div class="col-md-4"><div class="card p-3 h-100"><div class="small text-muted">{{ nome }} {% with u=linhas|last %}({{ linhas.0.ano }} → {{ u.ano }}){% endwith %}</div>
+    <div class="fs-5 fw-bold">{{ ini }} <i class="bi bi-arrow-right small text-muted"></i> {{ fim }}</div>
+    {% if tend == "melhora" %}<span class="text-success small"><i class="bi bi-arrow-up-right"></i> Melhora</span>
+    {% elif tend == "piora" %}<span class="text-danger small"><i class="bi bi-arrow-down-right"></i> Deterioração</span>
+    {% else %}<span class="text-muted small">Estável / sem dados</span>{% endif %}</div></div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card mb-3"><div class="card-header">Dívida consolidada × Receita corrente</div><div class="card-body">
+  <div class="d-flex flex-wrap gap-3 small mb-2">{% for s in grafico.series %}<span><span style="display:inline-block;width:14px;height:3px;background:{{ s.cor }};vertical-align:middle"></span> {{ s.nome }}</span>{% endfor %}</div>
+  {% localize off %}<svg viewBox="0 0 {{ grafico.largura }} {{ grafico.altura }}" width="100%" role="img" aria-label="Gráfico de evolução" style="max-height:320px">
+    {% for g in grafico.grade %}<line x1="{{ grafico.esq }}" x2="{{ grafico.dir }}" y1="{{ g.y }}" y2="{{ g.y }}" stroke="#e3e7ec"/>
+    <text x="{{ grafico.esq|add:'-8' }}" y="{{ g.y }}" text-anchor="end" dominant-baseline="middle" font-size="11" fill="#6c757d">{{ g.rotulo }}</text>{% endfor %}
+    {% for t in grafico.eixo_x %}<text x="{{ t.x }}" y="{{ grafico.base|add:'20' }}" text-anchor="middle" font-size="12" fill="#495057">{{ t.rotulo }}</text>{% endfor %}
+    {% for s in grafico.series %}
+      <polyline points="{{ s.polyline }}" fill="none" stroke="{{ s.cor }}" stroke-width="2.5" stroke-linejoin="round"/>
+      {% for p in s.pontos %}<circle cx="{{ p.x }}" cy="{{ p.y }}" r="4" fill="#fff" stroke="{{ s.cor }}" stroke-width="2"><title>{{ s.nome }} {{ p.rotulo }}: {{ p.valor }}</title></circle>{% endfor %}
+    {% endfor %}
+  </svg>{% endlocalize %}
+</div></div>
+
+<div class="card"><div class="card-header">Índices ano a ano</div>
+<div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
+<thead><tr><th>Ano</th><th>Data ref.</th><th class="num">Dívida</th><th class="num">Receita 12m</th><th class="num">CAPAG real</th><th class="num">CAPAG ÷ dívida</th>
+<th class="num">Endivid.</th><th class="num">Poupança</th><th class="num">Liquidez</th><th class="text-center">Nota</th><th>Tendência</th></tr></thead>
+<tbody>{% for a in linhas %}
+<tr style="cursor:pointer" onclick="location='{{ a.get_absolute_url }}'"><td class="fw-bold">{{ a.ano }}</td><td>{{ a.data_referencia|date:"d/m/Y" }}</td>
+<td class="num">{{ a.divida_total|brl }}</td><td class="num">{{ a.receita_bruta_12m|brl }}</td><td class="num">{{ a.capag_real|brl }}</td><td class="num">{{ a.razao_txt }}</td>
+{% for k in "endividamento poupanca liquidez"|split %}{% with i=a.ind|get_item:k %}<td class="num text-{{ i.cor }}">{{ i.texto }}</td>{% endwith %}{% endfor %}
+<td class="text-center">{% rating a.rating_real %}</td>
+<td>{% if a.tendencia == "melhora" %}<span class="text-success"><i class="bi bi-arrow-up"></i> Melhorou</span>{% elif a.tendencia == "piora" %}<span class="text-danger"><i class="bi bi-arrow-down"></i> Rebaixada</span>{% elif a.tendencia == "estavel" %}<span class="text-muted">Estável</span>{% else %}—{% endif %}</td></tr>
+{% endfor %}</tbody></table></div></div>
+{% if linhas|length == 1 %}<div class="form-text">Há apenas um ano com análise; cadastre análises de outros anos para ver a tendência.</div>{% endif %}
+{% else %}<div class="card p-4 text-center text-muted">Nenhuma análise da empresa no período.</div>{% endif %}
+{% else %}<div class="card p-4 text-center text-muted">Selecione uma empresa para gerar o relatório.</div>{% endif %}
+{% endblock %}

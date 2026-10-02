@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Envios{% endblock %}
+{% block content %}
+<h4 class="mb-3">Histórico de envios</h4>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+<thead><tr><th>Data</th><th>Empresa</th><th>Canal</th><th>Destino</th><th>Status</th><th>Usuário</th></tr></thead><tbody>
+{% for e in page %}<tr style="cursor:pointer" onclick="location='{{ e.analise.get_absolute_url }}'"><td>{{ e.enviado_em|date:"d/m/Y H:i" }}</td><td>{{ e.analise.empresa.razao_social|truncatechars:34 }}</td>
+<td>{% if e.canal == "WHATSAPP" %}<i class="bi bi-whatsapp text-success"></i>{% else %}<i class="bi bi-envelope"></i>{% endif %} {{ e.get_canal_display }}</td>
+<td>{% if e.canal == "WHATSAPP" %}{{ e.destino|whatsapp_fmt }}{% else %}{{ e.destino }}{% endif %}</td>
+<td><span class="badge bg-{% if e.status == 'ERRO' %}danger{% elif e.status == 'LINK' %}secondary{% else %}success{% endif %}" {% if e.status == 'ERRO' %}title="{{ e.resposta }}"{% endif %}>{{ e.get_status_display }}</span></td><td>{{ e.usuario|default:"—" }}</td></tr>
+{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhum envio ainda.</td></tr>{% endfor %}
+</tbody></table></div><div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div>
+{% endblock %}

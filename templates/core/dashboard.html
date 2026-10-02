@@ -1,0 +1,34 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Painel{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h4 class="mb-0">Painel</h4>
+  <a href="{% url 'empresa_nova' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nova empresa</a>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Empresas</div><div class="num">{{ total_empresas }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Análises</div><div class="num">{{ total_analises }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Envios realizados</div><div class="num">{{ total_envios }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small mb-1">Análises por rating real</div>
+    <div>{% for r in "ABCD" %}{% rating r %} <span class="me-2">{{ por_rating|default_if_none:0|get_item:r }}</span>{% endfor %}</div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7"><div class="card">
+    <div class="card-header">Últimas análises</div>
+    <div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+      <thead><tr><th>Empresa</th><th>Data</th><th class="num">CAPAG real</th><th class="text-center">PGFN</th><th class="text-center">Real</th></tr></thead>
+      <tbody>{% for a in ultimas %}
+        <tr style="cursor:pointer" onclick="location='{{ a.get_absolute_url }}'"><td>{{ a.empresa.razao_social|truncatechars:38 }}</td><td>{{ a.data_referencia|date:"d/m/Y" }}</td>
+        <td class="num">{{ a.capag_real|brl }}</td><td class="text-center">{% rating a.rating_pgfn %}</td><td class="text-center">{% rating a.rating_real %}</td></tr>
+      {% empty %}<tr><td colspan="5" class="text-muted text-center py-4">Nenhuma análise ainda. Cadastre uma empresa para começar.</td></tr>{% endfor %}</tbody>
+    </table></div>
+  </div></div>
+  <div class="col-lg-5"><div class="card">
+    <div class="card-header"><i class="bi bi-alarm"></i> Prazos de revisão (30 dias da ciência)</div>
+    <ul class="list-group list-group-flush">{% for a in prazos %}
+      <a href="{{ a.get_absolute_url }}" class="list-group-item list-group-item-action d-flex justify-content-between">
+        <span>{{ a.empresa.razao_social|truncatechars:32 }}</span>
+        <span class="{% if a.prazo_revisao < hoje %}text-danger{% else %}text-body{% endif %}">{{ a.prazo_revisao|date:"d/m/Y" }}</span></a>
+    {% empty %}<li class="list-group-item text-muted">Nenhum prazo em aberto.</li>{% endfor %}</ul>
+  </div></div>
+</div>
+{% endblock %}

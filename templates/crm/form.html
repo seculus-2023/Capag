@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}{{ titulo }}{% endblock %}
+{% block content %}
+<h4 class="mb-1">{{ titulo }}</h4>
+{% if subtitulo %}<div class="text-muted mb-3">{{ subtitulo }}</div>{% else %}<div class="mb-3"></div>{% endif %}
+{% if aviso_oab %}
+<div class="alert alert-info small"><i class="bi bi-info-circle"></i> <b>Regras da OAB (Provimento 205/2021):</b> o conteúdo deve ser
+informativo e sóbrio. Não prometa resultado, não divulgue honorários, gratuidade ou desconto, não se compare a outros
+escritórios e não chame para contratação. O envio vai somente para contatos que autorizaram o recebimento e depende da
+aprovação de um advogado.</div>
+{% endif %}
+<form method="post" class="card"{% if form.is_multipart %} enctype="multipart/form-data"{% endif %}><div class="card-body">{% csrf_token %}
+{% if form.non_field_errors %}<div class="alert alert-danger"><ul class="mb-0 ps-3">{% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+<div class="row g-3">
+  {% for field in form %}
+  <div class="{% if field.field.widget.attrs.rows %}col-12{% else %}col-md-6{% endif %}">{% include "core/_field.html" %}</div>
+  {% endfor %}
+</div></div>
+<div class="card-footer bg-white d-flex gap-2">
+  <button class="btn btn-primary">Salvar</button>
+  <a href="{{ voltar }}" class="btn btn-link">Cancelar</a>
+</div></form>
+{% endblock %}

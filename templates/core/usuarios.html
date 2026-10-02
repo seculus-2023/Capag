@@ -1,0 +1,32 @@
+{% extends "base.html" %}{% block title %}Usuários e perfis{% endblock %}
+{% block content %}
+<h4 class="mb-3">Usuários e perfis</h4>
+<div class="row g-3">
+  <div class="col-lg-8"><div class="card mb-3"><div class="card-header">Usuários</div>
+    <div class="table-responsive"><table class="table mb-0 align-middle">
+      <thead><tr><th>Usuário</th><th>E-mail</th><th>Perfil</th><th></th></tr></thead>
+      <tbody>{% for u in usuarios %}
+      <tr class="{% if not u.is_active %}text-muted{% endif %}"><td>{{ u.get_full_name|default:u.username }}<div class="small text-muted">{{ u.username }}{% if not u.is_active %} · bloqueado{% endif %}</div></td>
+        <td class="small">{{ u.email|default:"—" }}</td>
+        <td>{% if u == user or u.is_superuser %}<span class="badge text-bg-dark">{% for cod, nome in perfis %}{% if cod == u.perfil %}{{ nome }}{% endif %}{% endfor %}</span>
+            <div class="small text-muted">{% if u == user %}você{% else %}superusuário{% endif %}</div>
+          {% else %}<form method="post" action="{% url 'usuario_alterar' u.pk %}">{% csrf_token %}
+            <select name="perfil" class="form-select form-select-sm" style="min-width:8rem" onchange="this.form.submit()">
+              {% for cod, nome in perfis %}<option value="{{ cod }}"{% if cod == u.perfil %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select></form>{% endif %}</td>
+        <td class="text-end">{% if u != user and not u.is_superuser %}<form method="post" action="{% url 'usuario_alterar' u.pk %}">{% csrf_token %}
+          <button name="acao" value="ativo" class="btn btn-sm btn-outline-{% if u.is_active %}danger{% else %}success{% endif %} text-nowrap">{% if u.is_active %}Bloquear{% else %}Liberar{% endif %}</button></form>{% endif %}</td></tr>
+      {% endfor %}</tbody>
+    </table></div></div>
+    <div class="card"><div class="card-header">O que cada perfil pode fazer</div>
+    <div class="table-responsive"><table class="table table-sm mb-0 align-middle small">
+      <thead><tr><th>Área</th>{% for cod, nome in perfis %}<th class="text-center">{{ nome }}</th>{% endfor %}</tr></thead>
+      <tbody>{% for rotulo, colunas in matriz %}<tr><td>{{ rotulo }}</td>
+        {% for ok in colunas %}<td class="text-center">{% if ok %}<i class="bi bi-check-lg text-success"></i>{% else %}<span class="text-muted">—</span>{% endif %}</td>{% endfor %}</tr>{% endfor %}</tbody>
+    </table></div></div>
+  </div>
+  <div class="col-lg-4"><form method="post" class="card"><div class="card-header">Novo usuário</div><div class="card-body">{% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="row g-2">{% for field in form %}<div class="col-12">{% include "core/_field.html" %}</div>{% endfor %}</div>
+  </div><div class="card-footer bg-white"><button class="btn btn-primary">Criar usuário</button></div></form></div>
+</div>
+{% endblock %}

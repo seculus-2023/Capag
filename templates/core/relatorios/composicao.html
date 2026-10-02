@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Composição dos indicadores{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div><h4 class="mb-0">Composição dos indicadores</h4>
+    {% if a %}<div class="text-muted"><a href="{{ a.get_absolute_url }}" class="text-decoration-none">{{ a.empresa.razao_social }}</a> · {{ a.empresa.cnpj }} · referência {{ a.data_referencia|date:"d/m/Y" }}</div>{% endif %}</div>
+  {% if a %}<a class="btn btn-outline-secondary" target="_blank" href="{% url 'relatorio_composicao_analise' a.pk %}?formato=pdf"><i class="bi bi-file-earmark-pdf"></i> Exportar PDF</a>{% endif %}
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-md-10"><select name="analise" class="form-select" onchange="this.form.submit()">
+    <option value="">Selecione a empresa / análise…</option>
+    {% for x in analises %}<option value="{{ x.pk }}" {% if a.pk == x.pk %}selected{% endif %}>{{ x.empresa.razao_social }} — {{ x.data_referencia|date:"d/m/Y" }} (rating {{ x.rating_real }})</option>{% endfor %}
+  </select></div>
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100">Abrir</button></div>
+</form>
+{% if a %}{% include "core/relatorios/_composicao.html" %}
+{% else %}<div class="card p-4 text-center text-muted">Escolha uma análise para ver o passo a passo do cálculo.</div>{% endif %}
+{% endblock %}

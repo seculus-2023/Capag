@@ -1,0 +1,40 @@
+{% load capag %}
+<div class="row g-3 mb-3">
+  {% for k, i in ind.items %}
+  <div class="col-md-4"><div class="card h-100 border-top border-3 border-{{ i.cor }}"><div class="card-body">
+    <div class="d-flex justify-content-between align-items-start"><h6 class="mb-1">{{ i.nome }}</h6><span class="badge bg-{{ i.cor }}">{{ i.situacao_label }}</span></div>
+    <div class="small text-muted mb-2">{{ i.formula }}</div>
+    <div class="table-responsive"><table class="table table-sm small mb-2"><tbody>
+      <tr><td>{{ i.num_label }}</td><td class="num">{{ i.num|brl }}</td></tr>
+      <tr><td>÷ {{ i.den_label }}</td><td class="num">{{ i.den|brl }}</td></tr>
+      <tr class="fw-bold"><td>= Resultado</td><td class="num fs-5 text-{{ i.cor }}">{{ i.texto }}</td></tr>
+    </tbody></table></div>
+    <div class="form-text mt-0">{{ i.referencia }}</div>
+    {% if i.estimada %}<div class="form-text text-warning"><i class="bi bi-info-circle"></i> Estimada: informe ativo e passivo circulante na análise para o índice exato.</div>{% endif %}
+  </div></div></div>
+  {% endfor %}
+</div>
+<div class="card"><div class="card-header">Cálculo da nota (rating da CAPAG real)</div>
+<div class="row g-0">
+  <div class="col-lg-7"><div class="table-responsive"><table class="table table-sm mb-0"><tbody>
+    <tr><td>(+) Receita bruta 12 meses</td><td class="num">{{ a.receita_bruta_12m|brl }}</td></tr>
+    <tr><td>(−) Custos e despesas</td><td class="num">{{ a.custos_despesas_12m|brl }}</td></tr>
+    <tr><td>(−) Parcelas de financiamento</td><td class="num">{{ a.parcelas_financiamento_12m|brl }}</td></tr>
+    <tr><td>(−) Outras dívidas</td><td class="num">{{ a.outras_dividas_12m|brl }}</td></tr>
+    <tr class="fw-bold"><td>(=) Resultado anual livre</td><td class="num {% if a.resultado_anual_livre < 0 %}text-danger{% endif %}">{{ a.resultado_anual_livre|brl }}</td></tr>
+    <tr><td>Geração futura (resultado positivo × {{ passos.horizonte }} anos)</td><td class="num">{{ a.geracao_futura|brl }}</td></tr>
+    <tr><td>Patrimônio livre ((bens − onerados) × {{ passos.realizacao|floatformat:"-2" }}%)</td><td class="num">{{ a.patrimonio_livre|brl }}</td></tr>
+    <tr><td>Caixa e bancos</td><td class="num">{{ a.disponibilidades|brl }}</td></tr>
+    <tr class="fw-bold table-light"><td>CAPAG real</td><td class="num">{{ a.capag_real|brl }}</td></tr>
+    <tr><td>÷ Dívida consolidada</td><td class="num">{{ a.divida_total|brl }}</td></tr>
+    <tr class="fw-bold"><td>= Relação CAPAG ÷ dívida</td><td class="num">{{ passos.razao_txt }}</td></tr>
+  </tbody></table></div></div>
+  <div class="col-lg-5 p-3 border-start">
+    <div class="text-center mb-3"><div class="small text-muted">Nota obtida</div>{% rating a.rating_real True %}
+      {% if passos.irrecuperavel %}<div class="small text-danger mt-1">Forçada por irrecuperabilidade (art. 25)</div>{% endif %}</div>
+    <div class="table-responsive"><table class="table table-sm small mb-0"><thead><tr><th>Faixa</th><th>CAPAG ÷ dívida</th></tr></thead><tbody>
+    {% for r, txt in passos.faixas %}<tr {% if r == a.rating_real %}class="table-{{ r|rating_cor }} fw-bold"{% endif %}><td>{% rating r %}</td><td>{{ txt }}</td></tr>{% endfor %}
+    </tbody></table></div>
+  </div>
+</div></div>
+<div class="form-text">Endividamento, poupança corrente e liquidez são indicadores de apoio; a nota é definida pela relação CAPAG ÷ dívida com os parâmetros gravados nesta análise.</div>

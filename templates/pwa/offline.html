@@ -1,0 +1,7 @@
+{% load static %}<!doctype html>
+<html lang="pt-br"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sem conexão · Sistema CAPAG</title><meta name="theme-color" content="#1F4E79">
+<style>body{margin:0;font-family:system-ui,sans-serif;background:#f4f6f9;color:#333;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center}
+img{width:96px;border-radius:20px}button{margin-top:1rem;padding:.6rem 1.4rem;border:0;border-radius:.4rem;background:#1F4E79;color:#fff;font-size:1rem}</style></head>
+<body><div><img src="{% static 'pwa/icon-192.png' %}" alt=""><h2>Sem conexão</h2>
+<p>O sistema precisa de internet para abrir esta tela.</p><button onclick="location.reload()">Tentar de novo</button></div></body></html>
