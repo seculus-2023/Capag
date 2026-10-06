@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}{{ projeto.titulo }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div><h4 class="mb-0">{{ projeto.titulo }} <span class="badge text-bg-{% if projeto.status == 'CONCLUIDO' %}success{% elif projeto.status == 'CANCELADO' %}secondary{% elif projeto.atrasado %}danger{% else %}info{% endif %} align-middle fs-6">{% if projeto.atrasado %}Atrasado{% else %}{{ projeto.get_status_display }}{% endif %}</span></h4>
+    <div class="text-muted"><a href="{% url 'juridico:pasta' projeto.cliente.pk %}">{{ projeto.cliente.nome }}</a> · <a href="{{ projeto.proposta.get_absolute_url }}">proposta {{ projeto.proposta.numero }}</a> · {{ projeto.responsavel|nome_usuario }}</div></div>
+  <a href="{% url 'consultoria:projeto_editar' projeto.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a>
+</div>
+<div class="row g-3">
+  <div class="col-lg-7">
+    {% include "consultoria/_etapas.html" with titulo="Documentos do cliente" icone="folder-check" lista=documentos tipo="DOCUMENTO" %}
+    {% include "consultoria/_etapas.html" with titulo="Entregas" icone="list-check" lista=entregas tipo="ENTREGA" %}
+  </div>
+  <div class="col-lg-5">
+    <div class="card mb-3"><div class="card-body">
+      <div class="d-flex justify-content-between small mb-1"><span>Andamento</span><b>{{ projeto.progresso }}%</b></div>
+      <div class="progress mb-3" style="height:.7rem"><div class="progress-bar" style="width:{{ projeto.progresso }}%"></div></div>
+      <p class="small mb-1"><b>Início:</b> {{ projeto.inicio|date:"d/m/Y" }} · <b>Prazo:</b> <span class="{% if projeto.atrasado %}text-danger fw-semibold{% endif %}">{{ projeto.prazo|date:"d/m/Y" }}</span></p>
+      {% if projeto.concluido_em %}<p class="small mb-1"><b>Concluído em:</b> {{ projeto.concluido_em|date:"d/m/Y" }}</p>{% endif %}
+      {% if projeto.observacoes %}<p class="small mb-2">{{ projeto.observacoes|linebreaksbr }}</p>{% endif %}
+      <form method="post" action="{% url 'consultoria:projeto_status' projeto.pk %}" class="d-flex flex-wrap gap-2">{% csrf_token %}
+        {% if projeto.status == "ANDAMENTO" %}<button name="status" value="CONCLUIDO" class="btn btn-sm btn-success"><i class="bi bi-check2-all"></i> Concluir projeto</button>
+        <button name="status" value="CANCELADO" class="btn btn-sm btn-outline-secondary" onclick="return confirm('Cancelar o projeto?')">Cancelar</button>
+        {% else %}<button name="status" value="ANDAMENTO" class="btn btn-sm btn-outline-secondary">Reabrir</button>{% endif %}
+      </form>
+    </div></div>
+    {% if lancamentos is not None %}
+    <div class="card"><div class="card-header"><i class="bi bi-cash-coin"></i> Honorários da proposta</div>
+      <ul class="list-group list-group-flush">{% for x in lancamentos %}
+        <li class="list-group-item small d-flex justify-content-between gap-2"><span>{{ x.vencimento|date:"d/m/Y" }} · {{ x.get_categoria_display }}</span>
+          <span class="money">{{ x.valor|brl }} <span class="badge text-bg-{{ x.situacao.1 }}">{{ x.situacao.0 }}</span></span></li>
+      {% empty %}<li class="list-group-item small text-muted">Nenhum lançamento.</li>{% endfor %}</ul>
+      <div class="card-body small"><a href="{% url 'juridico:pasta' projeto.cliente.pk %}">Abrir o financeiro na pasta do cliente</a></div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -67,6 +67,26 @@ Configure no `.env`: `ESCRITORIO_NOME`, `ESCRITORIO_OAB`, `CRM_FOLLOWUP_DIAS`, `
 lembrete por WhatsApp fora da janela de 24 horas, `WHATSAPP_TEMPLATE_LEMBRETE` (template aprovado na Meta com
 4 variáveis no corpo: nome, data, hora e local).
 
+## Consultoria (menu Consultoria)
+Venda dos serviços do escritório **dentro do atendimento**, para quem já procurou o escritório. Não há vitrine
+pública nem divulgação de preços (Provimento 205/2021 da OAB): o valor só aparece na proposta individual.
+
+- **Catálogo de produtos**: serviço, área, forma de cobrança (valor fixo, mensalidade ou só êxito), valor de
+  referência, % de êxito, prazo, escopo, etapas de entrega e documentos exigidos do cliente. A instalação cria um
+  catálogo inicial (Diagnóstico de CAPAG, Pedido de revisão de CAPAG, Transação PGFN, ICMS, ambiental, assessoria
+  mensal...) **com valores zerados**: o sócio define os preços.
+- **Proposta**: no atendimento do CRM, *Montar proposta* escolhe os produtos do catálogo e ajusta valores,
+  parcelas, meses de mensalidade e validade. Se o contato tem empresa na CAPAG, a última análise entra no PDF
+  como diagnóstico (CAPAG presumida × real, rating e desconto estimado).
+- **Envio**: e-mail com o PDF anexado ou WhatsApp (wa.me) com link seguro do PDF, que expira
+  (`LINK_PDF_VALIDADE_DIAS`). Ao enviar, o atendimento vai para *Proposta enviada* com o valor estimado e o envio
+  entra no histórico de contatos.
+- **Aceite**: abre o **projeto** (checklist dos documentos a receber e das entregas) e lança os honorários no
+  **Financeiro** (valores fixos parcelados e mensalidades). O êxito fica anotado no projeto para lançar quando
+  apurado. O contrato continua no fluxo de assinatura digital do atendimento.
+- **Indicadores** (perfil com Inteligência comercial): taxa de aceite, receita contratada, ticket médio, receita
+  recorrente e vendas por produto e por área.
+
 ## Processos, prazos, financeiro e documentos (menu Jurídico)
 - **Processos**: judiciais e administrativos (PGFN, Sefaz, CARF, Ibama...), ligados ao cliente (contato do CRM),
   com vara/órgão, parte contrária, fase, valor da causa, responsável e andamentos.
@@ -91,6 +111,8 @@ Em *Usuários e perfis* (menu do usuário, só para sócios) cria-se o usuário 
 | Cadastrar e alterar processos e prazos | sim | sim | – | – | – |
 | Documentos dos clientes | sim | sim | sim | sim | sim |
 | Honorários e despesas | sim | – | – | – | sim |
+| Consultoria: catálogo, propostas e projetos | sim | sim | – | – | – |
+| Consultoria: cadastrar produtos e preços | sim | – | – | – | – |
 | Inteligência comercial | sim | – | – | – | – |
 | Excluir registros | sim | – | – | – | – |
 | Usuários, parâmetros, aprovar conteúdos | sim | – | – | – | – |
@@ -129,7 +151,7 @@ python manage.py runserver
 ```
 Acesse http://localhost:8000.
 
-Testes: `python manage.py test core crm juridico`
+Testes: `python manage.py test core crm juridico consultoria`
 
 ## E-mail
 Gmail: ative a verificação em duas etapas e gere uma **senha de app**. Use-a em `EMAIL_HOST_PASSWORD`.

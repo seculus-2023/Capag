@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}Propostas{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h4 class="mb-0">Propostas de consultoria</h4>
+  <span class="small text-muted">Para criar uma proposta, abra o atendimento do cliente no <a href="{% url 'crm:funil' %}">funil</a>.</span>
+</div>
+<form class="row g-2 mb-3">
+  <div class="col-12 col-md"><input name="q" value="{{ q }}" class="form-control" placeholder="Cliente ou assunto"></div>
+  <div class="col-6 col-md-auto"><select name="status" class="form-select"><option value="">Todas</option>
+    {% for cod, nome in status_choices %}<option value="{{ cod }}"{% if cod == status %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-auto form-check mt-2 ms-2"><input type="checkbox" name="minhas" value="1" id="minhas" class="form-check-input"{% if minhas %} checked{% endif %}>
+    <label for="minhas" class="form-check-label">Só as minhas</label></div>
+  <div class="col-auto"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div>
+</form>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+<thead><tr><th>Nº</th><th>Cliente</th><th>Responsável</th><th class="num">Valor estimado</th><th>Situação</th><th>Validade</th></tr></thead>
+<tbody>{% for p in page %}
+<tr><td><a href="{{ p.get_absolute_url }}">{{ p.numero }}</a></td>
+<td>{{ p.contato.nome|truncatechars:34 }}<div class="small text-muted">{{ p.oportunidade.titulo|truncatechars:40 }}</div></td>
+<td>{{ p.oportunidade.responsavel|nome_usuario }}</td>
+<td class="num">{{ p.total_estimado|brl }}{% if p.tem_exito %}<div class="small text-muted">+ êxito</div>{% endif %}</td>
+<td>{% include "consultoria/_status.html" %}</td>
+<td class="text-nowrap">{{ p.validade|date:"d/m/Y" }}</td></tr>
+{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhuma proposta encontrada.</td></tr>{% endfor %}</tbody>
+</table></div><div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div>
+{% endblock %}

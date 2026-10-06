@@ -17,6 +17,15 @@
       {% empty %}<li class="list-group-item text-muted">Nenhum processo cadastrado.</li>{% endfor %}</ul>
     </div>
     {% endif %}
+    {% if pode.consultoria %}
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-list-check"></i> Projetos de consultoria</div>
+      <ul class="list-group list-group-flush">{% for x in cliente.projetos_consultoria.all %}
+        <a href="{{ x.get_absolute_url }}" class="list-group-item list-group-item-action d-flex justify-content-between gap-2">
+          <span>{{ x.titulo }}<div class="small text-muted">prazo {{ x.prazo|date:"d/m/Y" }} · {{ x.progresso }}% concluído</div></span>
+          <span class="badge text-bg-{% if x.status == 'CONCLUIDO' %}success{% elif x.status == 'CANCELADO' %}secondary{% elif x.atrasado %}danger{% else %}info{% endif %} align-self-start">{% if x.atrasado %}Atrasado{% else %}{{ x.get_status_display }}{% endif %}</span></a>
+      {% empty %}<li class="list-group-item text-muted">Nenhum projeto de consultoria.</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
     {% if pode.financeiro %}{% include "juridico/_lancamentos.html" %}{% endif %}
   </div>
   <div class="col-lg-5">

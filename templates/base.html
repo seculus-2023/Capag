@@ -63,6 +63,15 @@
             <li><a class="dropdown-item" href="{% url 'crm:atualizacoes' %}"><i class="bi bi-newspaper"></i> Atualizações jurídicas</a></li>
           </ul></li>
         {% endif %}
+        {% if pode.consultoria %}
+        <li class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Consultoria</a>
+          <ul class="dropdown-menu">
+            <li><a class="dropdown-item" href="{% url 'consultoria:catalogo' %}"><i class="bi bi-box-seam"></i> Catálogo de produtos</a></li>
+            <li><a class="dropdown-item" href="{% url 'consultoria:proposta_lista' %}"><i class="bi bi-file-earmark-text"></i> Propostas</a></li>
+            <li><a class="dropdown-item" href="{% url 'consultoria:projeto_lista' %}"><i class="bi bi-list-check"></i> Projetos</a></li>
+            {% if pode.bi %}<li><a class="dropdown-item" href="{% url 'consultoria:indicadores' %}"><i class="bi bi-graph-up-arrow"></i> Indicadores</a></li>{% endif %}
+          </ul></li>
+        {% endif %}
         {% if pode.processos or pode.financeiro %}
         <li class="nav-item dropdown"><a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Jurídico</a>
           <ul class="dropdown-menu">

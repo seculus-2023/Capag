@@ -1,0 +1,1 @@
+{% if p.expirada %}<span class="badge text-bg-secondary">Expirada</span>{% else %}<span class="badge text-bg-{% if p.status == 'ACEITA' %}success{% elif p.status == 'RECUSADA' %}danger{% elif p.status == 'ENVIADA' %}warning{% else %}light border{% endif %}">{{ p.get_status_display }}</span>{% endif %}

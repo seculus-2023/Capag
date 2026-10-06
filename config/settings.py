@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     "core",
     "crm",
     "juridico",
+    "consultoria",
 ]
 
 MIDDLEWARE = [

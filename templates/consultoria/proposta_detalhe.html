@@ -1,0 +1,85 @@
+{% extends "base.html" %}{% load capag crm_tags %}{% block title %}Proposta {{ p.numero }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
+  <div><h4 class="mb-0">Proposta {{ p.numero }} {% include "consultoria/_status.html" %}</h4>
+    <div class="text-muted"><a href="{{ op.get_absolute_url }}">{{ contato.nome }} – {{ op.titulo }}</a> · válida até {{ p.validade|date:"d/m/Y" }}</div></div>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'consultoria:proposta_pdf' p.pk %}" target="_blank" class="btn btn-outline-secondary"><i class="bi bi-file-earmark-pdf"></i> Ver PDF</a>
+    {% if p.editavel %}<a href="{% url 'consultoria:proposta_editar' p.pk %}" class="btn btn-outline-secondary"><i class="bi bi-pencil"></i> Editar</a>{% endif %}
+    <form method="post" action="{% url 'consultoria:proposta_acao' p.pk 'duplicar' %}">{% csrf_token %}<button class="btn btn-outline-secondary" title="Nova proposta com os mesmos itens"><i class="bi bi-copy"></i> Duplicar</button></form>
+  </div>
+</div>
+
+{% if p.expirada %}<div class="alert alert-warning"><i class="bi bi-hourglass-bottom"></i> A validade venceu em {{ p.validade|date:"d/m/Y" }}. Volte para rascunho, ajuste a validade e reenvie, ou registre a resposta do cliente.</div>{% endif %}
+{% if projeto %}<div class="alert alert-success"><i class="bi bi-check2-circle"></i> Aceita em {{ p.respondida_em|date:"d/m/Y" }}. <a href="{{ projeto.get_absolute_url }}" class="alert-link">Abrir o projeto</a> · Registre o link do contrato no <a href="{{ op.get_absolute_url }}" class="alert-link">atendimento</a>.</div>{% endif %}
+{% if p.status == "RECUSADA" %}<div class="alert alert-danger"><i class="bi bi-x-circle"></i> Recusada em {{ p.respondida_em|date:"d/m/Y" }}{% if p.motivo_recusa %}: {{ p.motivo_recusa }}{% endif %}.</div>{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card mb-3"><div class="card-header">Itens</div>
+      <div class="table-responsive"><table class="table mb-0 align-middle">
+        <thead><tr><th>Serviço</th><th>Cobrança</th><th class="num">Valor</th></tr></thead>
+        <tbody>{% for i in itens %}
+          <tr><td>{{ i.descricao }}<div class="small text-muted">{{ i.produto.get_area_display }} · {{ i.produto.prazo_dias }} dias</div></td>
+            <td>{{ i.get_cobranca_display }}{% if i.percentual_exito %}<div class="small text-muted">+ {{ i.percentual_exito|floatformat:"-2" }}% êxito</div>{% endif %}</td>
+            <td class="num">{{ i.valor|brl }}{% if i.cobranca == "MENSAL" %}/mês{% endif %}</td></tr>
+        {% empty %}<tr><td colspan="3" class="text-muted">Nenhum item.</td></tr>{% endfor %}</tbody>
+        <tfoot class="small">
+          {% if p.total_fixo %}<tr><td colspan="2">Valores fixos{% if p.parcelas > 1 %} em {{ p.parcelas }} parcelas{% endif %}</td><td class="num">{{ p.total_fixo|brl }}</td></tr>{% endif %}
+          {% if p.total_mensal %}<tr><td colspan="2">Mensalidade × {{ p.meses_mensalidade }} meses</td><td class="num">{{ p.total_mensal|brl }}/mês</td></tr>{% endif %}
+          <tr class="fw-bold"><td colspan="2">Total estimado (sem êxito)</td><td class="num">{{ p.total_estimado|brl }}</td></tr>
+        </tfoot>
+      </table></div>
+    </div>
+    {% if p.analise %}<div class="card mb-3"><div class="card-body small"><i class="bi bi-calculator"></i> Diagnóstico anexado ao PDF:
+      <a href="{{ p.analise.get_absolute_url }}">análise de CAPAG de {{ p.analise.data_referencia|date:"d/m/Y" }}</a> · rating real {% rating p.analise.rating_real %}</div></div>{% endif %}
+    {% if p.condicoes %}<div class="card mb-3"><div class="card-header">Condições</div><div class="card-body small">{{ p.condicoes|linebreaksbr }}</div></div>{% endif %}
+  </div>
+
+  <div class="col-lg-5">
+    {% if p.status == "RASCUNHO" or p.status == "ENVIADA" %}
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-send"></i> {% if p.status == "ENVIADA" %}Reenviar ao cliente{% else %}Enviar ao cliente{% endif %}</div>
+      <div class="card-body">
+        <form method="post" action="{% url 'consultoria:proposta_enviar' p.pk %}" class="mb-3">{% csrf_token %}
+          <input type="hidden" name="canal" value="EMAIL">
+          <label class="form-label">E-mail (com o PDF anexado)</label>
+          <div class="input-group"><input name="destino" type="text" value="{{ contato.email }}" class="form-control" placeholder="email@cliente.com.br">
+            <button class="btn btn-primary"><i class="bi bi-envelope"></i> Enviar</button></div>
+          <textarea name="mensagem" rows="4" class="form-control mt-2">{{ mensagem }}</textarea>
+        </form>
+        <form method="post" action="{% url 'consultoria:proposta_enviar' p.pk %}" target="_blank">{% csrf_token %}
+          <input type="hidden" name="canal" value="WHATSAPP"><input type="hidden" name="mensagem" value="{{ mensagem }}">
+          <label class="form-label">WhatsApp (link seguro do PDF, expira)</label>
+          <div class="input-group"><input name="destino" type="text" value="{{ contato.whatsapp }}" class="form-control" placeholder="(65) 99999-9999">
+            <button class="btn btn-success" onclick="setTimeout(function(){location.reload()},1500)"><i class="bi bi-whatsapp"></i> Abrir WhatsApp</button></div>
+        </form>
+        <div class="form-text">Ao enviar, o atendimento vai para “Proposta enviada” com o valor estimado e o envio entra no histórico.</div>
+      </div>
+    </div>
+    {% endif %}
+
+    {% if p.status == "ENVIADA" %}
+    <div class="card mb-3"><div class="card-header"><i class="bi bi-reply"></i> Resposta do cliente</div><div class="card-body">
+      <form method="post" action="{% url 'consultoria:proposta_acao' p.pk 'aceitar' %}" class="row g-2 align-items-end mb-3" onsubmit="return confirm('Confirmar o aceite? O projeto será aberto e os honorários lançados no financeiro.')">{% csrf_token %}
+        <div class="col-6"><label class="form-label">Data do aceite</label><input type="date" name="data" value="{% now 'Y-m-d' %}" class="form-control"></div>
+        <div class="col-6"><button class="btn btn-success w-100"><i class="bi bi-check2-circle"></i> Aceita</button></div>
+      </form>
+      <form method="post" action="{% url 'consultoria:proposta_acao' p.pk 'recusar' %}" class="row g-2 align-items-end">{% csrf_token %}
+        <div class="col-8"><input name="motivo" class="form-control" placeholder="Motivo da recusa (opcional)"></div>
+        <div class="col-4"><button class="btn btn-outline-danger w-100">Recusada</button></div>
+      </form>
+    </div></div>
+    {% endif %}
+
+    <div class="card"><div class="card-body small">
+      <p class="mb-1"><b>Responsável:</b> {{ op.responsavel|nome_usuario }}</p>
+      <p class="mb-1"><b>Criada em:</b> {{ p.criado_em|date:"d/m/Y H:i" }} por {{ p.criado_por|nome_usuario }}</p>
+      {% if p.enviada_em %}<p class="mb-1"><b>Enviada em:</b> {{ p.enviada_em|date:"d/m/Y" }}</p>{% endif %}
+      <div class="d-flex flex-wrap gap-2 mt-2">
+        {% if p.status == "ENVIADA" or p.status == "RECUSADA" %}<form method="post" action="{% url 'consultoria:proposta_acao' p.pk 'rascunho' %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary">Voltar para rascunho</button></form>{% endif %}
+        {% if p.status != "ACEITA" %}<form method="post" action="{% url 'consultoria:proposta_acao' p.pk 'excluir' %}" onsubmit="return confirm('Excluir esta proposta?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i> Excluir</button></form>{% endif %}
+      </div>
+    </div></div>
+  </div>
+</div>
+{% endblock %}

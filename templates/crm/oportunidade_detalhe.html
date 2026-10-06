@@ -33,6 +33,17 @@
       {% empty %}<li class="list-group-item text-muted">Nenhuma consulta agendada.</li>{% endfor %}</ul>
     </div>
 
+    {% if pode.consultoria %}
+    <div class="card mb-3"><div class="card-header d-flex justify-content-between align-items-center"><span><i class="bi bi-box-seam"></i> Propostas pelo catálogo da consultoria</span>
+      {% if op.aberta %}<a href="{% url 'consultoria:proposta_nova' op.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> Montar proposta</a>{% endif %}</div>
+      <ul class="list-group list-group-flush">{% for p in op.propostas.all %}
+        <a href="{{ p.get_absolute_url }}" class="list-group-item list-group-item-action d-flex justify-content-between gap-2">
+          <span>Proposta {{ p.numero }} <span class="small text-muted">· válida até {{ p.validade|date:"d/m/Y" }}</span></span>
+          <span>{% include "consultoria/_status.html" %}</span></a>
+      {% empty %}<li class="list-group-item small text-muted">Nenhuma proposta. Monte uma com os produtos do catálogo: o PDF, o envio e o valor estimado são feitos pelo sistema.</li>{% endfor %}</ul>
+    </div>
+    {% endif %}
+
     {% if op.aberta %}
     <div class="card mb-3"><div class="card-header"><i class="bi bi-file-earmark-text"></i> 2. Proposta de honorários</div>
       <form method="post" action="{% url 'crm:oportunidade_acao' op.pk 'proposta' %}" class="card-body">{% csrf_token %}

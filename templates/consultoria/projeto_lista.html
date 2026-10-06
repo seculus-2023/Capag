@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% load crm_tags %}{% block title %}Projetos de consultoria{% endblock %}
+{% block content %}
+<h4 class="mb-3">Projetos de consultoria</h4>
+<form class="row g-2 mb-3">
+  <div class="col-6 col-md-auto"><select name="status" class="form-select" onchange="this.form.submit()"><option value="">Todos</option>
+    {% for cod, nome in status_choices %}<option value="{{ cod }}"{% if cod == status %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select></div>
+  <div class="col-auto form-check mt-2 ms-2"><input type="checkbox" name="meus" value="1" id="meus" class="form-check-input"{% if meus %} checked{% endif %} onchange="this.form.submit()">
+    <label for="meus" class="form-check-label">Só os meus</label></div>
+</form>
+<div class="card"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
+<thead><tr><th>Projeto</th><th>Responsável</th><th style="width:12rem">Andamento</th><th>Prazo</th><th>Situação</th></tr></thead>
+<tbody>{% for x in page %}
+<tr><td><a href="{{ x.get_absolute_url }}">{{ x.titulo|truncatechars:40 }}</a><div class="small text-muted">{{ x.cliente.nome|truncatechars:40 }} · proposta {{ x.proposta.numero }}</div></td>
+<td>{{ x.responsavel|nome_usuario }}</td>
+<td><div class="progress" style="height:.6rem" title="{{ x.progresso }}%"><div class="progress-bar" style="width:{{ x.progresso }}%"></div></div><div class="small text-muted">{{ x.progresso }}%</div></td>
+<td class="text-nowrap{% if x.atrasado %} text-danger fw-semibold{% endif %}">{{ x.prazo|date:"d/m/Y" }}</td>
+<td><span class="badge text-bg-{% if x.status == 'CONCLUIDO' %}success{% elif x.status == 'CANCELADO' %}secondary{% elif x.atrasado %}danger{% else %}info{% endif %}">{% if x.atrasado %}Atrasado{% else %}{{ x.get_status_display }}{% endif %}</span></td></tr>
+{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Nenhum projeto. Os projetos nascem do aceite de uma proposta.</td></tr>{% endfor %}</tbody>
+</table></div><div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div>
+{% endblock %}

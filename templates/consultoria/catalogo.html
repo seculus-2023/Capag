@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Catálogo da consultoria{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h4 class="mb-0">Catálogo da consultoria</h4>
+  {% if pode.consultoria_precos %}<a href="{% url 'consultoria:produto_novo' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Novo produto</a>{% endif %}
+</div>
+<div class="alert alert-info small"><i class="bi bi-info-circle"></i> Catálogo de uso interno. Os valores servem de referência para montar
+  a proposta individual de quem procurou o escritório; não os divulgue em anúncios, site ou redes sociais (Provimento 205/2021 da OAB).</div>
+<form class="row g-2 mb-3">
+  <div class="col-auto"><select name="area" class="form-select" onchange="this.form.submit()"><option value="">Todas as áreas</option>
+    {% for cod, nome in areas %}<option value="{{ cod }}"{% if cod == area %} selected{% endif %}>{{ nome }}</option>{% endfor %}</select></div>
+  <div class="col-auto form-check mt-2 ms-2"><input type="checkbox" name="inativos" value="1" id="inativos" class="form-check-input"{% if inativos %} checked{% endif %} onchange="this.form.submit()">
+    <label for="inativos" class="form-check-label">Mostrar inativos</label></div>
+</form>
+<div class="row g-3">{% for p in produtos %}
+  <div class="col-md-6 col-xl-4"><div class="card h-100{% if not p.ativo %} opacity-50{% endif %}"><div class="card-body">
+    <div class="d-flex justify-content-between gap-2"><h6 class="mb-1">{{ p.nome }}</h6>
+      {% if pode.consultoria_precos %}<a href="{% url 'consultoria:produto_editar' p.pk %}" class="btn btn-sm btn-outline-secondary align-self-start" title="Editar"><i class="bi bi-pencil"></i></a>{% endif %}</div>
+    <div class="small text-muted mb-2">{{ p.get_area_display }} · {{ p.prazo_dias }} dias{% if p.usa_capag %} · <i class="bi bi-calculator"></i> usa CAPAG{% endif %}{% if not p.ativo %} · inativo{% endif %}</div>
+    <div class="mb-2"><b class="money">{% if p.cobranca == "EXITO" and not p.valor_referencia %}—{% else %}{{ p.valor_referencia|brl }}{% if p.cobranca == "MENSAL" %}/mês{% endif %}{% endif %}</b>
+      {% if p.percentual_exito %}<span class="badge text-bg-light border">+ {{ p.percentual_exito|floatformat:"-2" }}% êxito</span>{% endif %}
+      {% if not p.valor_referencia and p.cobranca != "EXITO" %}<span class="badge text-bg-warning">sem preço</span>{% endif %}</div>
+    <p class="small mb-0">{{ p.escopo|truncatewords:40 }}</p>
+  </div></div></div>
+{% empty %}<div class="col-12 text-muted">Nenhum produto cadastrado.</div>{% endfor %}</div>
+{% endblock %}

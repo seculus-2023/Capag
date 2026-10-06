@@ -1,0 +1,14 @@
+{% load crm_tags %}<div class="card mb-3"><div class="card-header"><i class="bi bi-{{ icone }}"></i> {{ titulo }}</div>
+  <ul class="list-group list-group-flush">{% for e in lista %}
+    <li class="list-group-item d-flex gap-2 align-items-start">
+      <form method="post" action="{% url 'consultoria:etapa_marcar' e.pk %}">{% csrf_token %}
+        <button class="btn btn-sm {% if e.concluida_em %}btn-success{% else %}btn-outline-secondary{% endif %}" title="{% if e.concluida_em %}Desmarcar{% else %}Marcar como feito{% endif %}"><i class="bi bi-check2"></i></button></form>
+      <div><span class="{% if e.concluida_em %}text-decoration-line-through text-muted{% endif %}">{{ e.descricao }}</span>
+        {% if e.concluida_em %}<div class="small text-muted">{{ e.concluida_em|date:"d/m/Y H:i" }} · {{ e.concluida_por|nome_usuario }}</div>{% endif %}</div>
+    </li>
+  {% empty %}<li class="list-group-item small text-muted">Nada cadastrado.</li>{% endfor %}
+    <li class="list-group-item"><form method="post" action="{% url 'consultoria:etapa_nova' projeto.pk %}" class="input-group input-group-sm">{% csrf_token %}
+      <input type="hidden" name="tipo" value="{{ tipo }}"><input name="descricao" class="form-control" placeholder="Incluir item" required maxlength="250">
+      <button class="btn btn-outline-primary"><i class="bi bi-plus-lg"></i></button></form></li>
+  </ul>
+</div>

@@ -13,6 +13,8 @@ PERMISSOES = {
     "processos_editar": "Cadastrar e alterar processos e prazos",
     "documentos": "Documentos dos clientes",
     "financeiro": "Honorários e despesas",
+    "consultoria": "Catálogo, propostas e projetos de consultoria",
+    "consultoria_precos": "Cadastrar produtos e preços da consultoria",
     "bi": "Inteligência comercial",
     "excluir": "Excluir registros",
     "administrar": "Usuários, parâmetros e aprovação de conteúdos",
@@ -20,7 +22,7 @@ PERMISSOES = {
 
 PERFIS = {
     "SOCIO": ("Sócio", set(PERMISSOES)),
-    "ADVOGADO": ("Advogado", {"crm", "capag", "processos", "processos_editar", "documentos"}),
+    "ADVOGADO": ("Advogado", {"crm", "capag", "processos", "processos_editar", "documentos", "consultoria"}),
     "ESTAGIARIO": ("Estagiário", {"crm", "capag", "processos", "documentos"}),
     "SECRETARIA": ("Secretaria", {"crm", "processos", "documentos"}),
     "FINANCEIRO": ("Financeiro", {"crm", "documentos", "financeiro"}),

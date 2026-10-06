@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Indicadores da consultoria{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h4 class="mb-0">Indicadores da consultoria</h4>
+  <form class="d-flex gap-2 align-items-center">
+    <input type="date" name="de" value="{{ de|date:'Y-m-d' }}" class="form-control" title="Propostas criadas de">
+    <input type="date" name="ate" value="{{ ate|date:'Y-m-d' }}" class="form-control" title="até">
+    <button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button>
+  </form>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Propostas no período</div><div class="num fs-4">{{ i.total }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Taxa de aceite</div><div class="num fs-4">{% if i.taxa_aceite is not None %}{{ i.taxa_aceite }}%{% else %}—{% endif %}</div><div class="small text-muted">aceitas ÷ (aceitas + recusadas)</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Receita contratada</div><div class="num fs-4">{{ i.receita|brl }}</div><div class="small text-muted">ticket médio {{ i.ticket_medio|brl }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="card stat p-3"><div class="text-muted small">Receita recorrente</div><div class="num fs-4">{{ i.recorrente|brl }}</div><div class="small text-muted">por mês, projetos em andamento</div></div></div>
+</div>
+<div class="row g-3">
+  <div class="col-lg-8"><div class="card"><div class="card-header">Por produto</div>
+    <div class="table-responsive"><table class="table mb-0 align-middle">
+      <thead><tr><th>Produto</th><th class="num">Propostas</th><th class="num">Vendas</th><th class="num">Conversão</th><th class="num">Receita</th></tr></thead>
+      <tbody>{% for nome, x in i.produtos %}
+        <tr><td>{{ nome }}</td><td class="num">{{ x.propostas }}</td><td class="num">{{ x.vendas }}</td>
+          <td class="num">{% widthratio x.vendas x.propostas 100 %}%</td><td class="num">{{ x.receita|brl }}</td></tr>
+      {% empty %}<tr><td colspan="5" class="text-muted text-center py-3">Nenhuma proposta no período.</td></tr>{% endfor %}</tbody>
+    </table></div></div></div>
+  <div class="col-lg-4">
+    <div class="card mb-3"><div class="card-header">Situação das propostas</div><ul class="list-group list-group-flush">
+      {% for cod, nome in status_choices %}<li class="list-group-item d-flex justify-content-between">{{ nome }} <b>{{ i.por_status|get_item:cod|default:0 }}</b></li>{% endfor %}
+    </ul></div>
+    <div class="card"><div class="card-header">Receita por área</div><ul class="list-group list-group-flush">
+      {% for area, valor in i.areas %}<li class="list-group-item d-flex justify-content-between">{{ area }} <b class="money">{{ valor|brl }}</b></li>
+      {% empty %}<li class="list-group-item text-muted small">Sem vendas no período.</li>{% endfor %}
+    </ul></div>
+  </div>
+</div>
+<p class="small text-muted mt-2">A receita considera os valores fixos e as mensalidades do período contratado das propostas aceitas. O êxito não entra, porque depende do resultado.</p>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}{% load capag %}{% block title %}{% if proposta %}Proposta {{ proposta.numero }}{% else %}Nova proposta{% endif %}{% endblock %}
+{% block content %}
+<h4 class="mb-1">{% if proposta %}Editar proposta {{ proposta.numero }}{% else %}Nova proposta{% endif %}</h4>
+<div class="text-muted mb-3"><a href="{{ op.get_absolute_url }}">{{ op.contato.nome }} – {{ op.titulo }}</a></div>
+<form method="post">{% csrf_token %}
+{% if form.non_field_errors or itens.non_form_errors %}<div class="alert alert-danger"><ul class="mb-0 ps-3">
+  {% for e in form.non_field_errors %}<li>{{ e }}</li>{% endfor %}{% for e in itens.non_form_errors %}<li>{{ e }}</li>{% endfor %}</ul></div>{% endif %}
+
+<div class="card mb-3"><div class="card-header"><i class="bi bi-box-seam"></i> Produtos do catálogo</div>
+  {{ itens.management_form }}
+  <div class="table-responsive"><table class="table mb-0 align-top">
+  <thead><tr><th style="min-width:14rem">Produto *</th><th style="min-width:14rem">Descrição na proposta</th><th style="width:11rem">Valor</th><th style="width:7rem">Êxito (%)</th><th class="text-center">Remover</th></tr></thead>
+  <tbody>{% for f in itens %}
+    <tr>{% for h in f.hidden_fields %}{{ h }}{% endfor %}
+      <td>{{ f.produto }}{% for e in f.produto.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+      <td>{{ f.descricao }}</td>
+      <td>{{ f.valor }}<div class="form-text ref"></div>{% for e in f.valor.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</td>
+      <td>{{ f.percentual_exito }}</td>
+      <td class="text-center">{% if f.instance.pk %}{{ f.DELETE }}{% endif %}</td>
+    </tr>{% endfor %}</tbody>
+  </table></div>
+  <div class="card-body small text-muted pt-2">Valor em branco = valor de referência do catálogo. Para incluir mais produtos, salve e edite de novo (abre uma linha a mais).</div>
+</div>
+
+<div class="card mb-3"><div class="card-header"><i class="bi bi-sliders"></i> Condições</div><div class="card-body"><div class="row g-3">
+  {% for field in form %}
+  <div class="{% if field.field.widget.attrs.rows %}col-12{% else %}col-md-4{% endif %}">{% include "core/_field.html" %}</div>
+  {% endfor %}
+</div></div>
+<div class="card-footer bg-white d-flex gap-2">
+  <button class="btn btn-primary">Salvar</button>
+  <a href="{% if proposta %}{{ proposta.get_absolute_url }}{% else %}{{ op.get_absolute_url }}{% endif %}" class="btn btn-link">Cancelar</a>
+</div></div>
+</form>
+{{ referencias|json_script:"refs" }}
+{% endblock %}
+{% block scripts %}
+<script>
+// mostra o valor de referência do produto escolhido, para o advogado comparar
+var REFS = JSON.parse(document.getElementById("refs").textContent);
+document.querySelectorAll('select[name$="-produto"]').forEach(function(sel){
+  var ref = sel.closest('tr').querySelector('.ref');
+  function mostra(){ ref.textContent = REFS[sel.value] ? 'Catálogo: ' + REFS[sel.value] : ''; }
+  sel.addEventListener('change', mostra); mostra();
+});
+</script>
+{% endblock %}
