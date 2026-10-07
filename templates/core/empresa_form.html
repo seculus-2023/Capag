@@ -8,15 +8,25 @@
     <button type="button" id="btnCnpj" class="btn btn-sm btn-outline-primary mt-1"><i class="bi bi-cloud-download"></i> Buscar dados na Receita</button>
     <span id="cnpjMsg" class="small ms-1"></span></div>
   <div class="col-md-8">{% include "core/_field.html" with field=form.razao_social %}</div>
-  <div class="col-md-5">{% include "core/_field.html" with field=form.nome_fantasia %}</div>
+  <div class="col-md-6">{% include "core/_field.html" with field=form.nome_fantasia %}</div>
   <div class="col-md-3">{% include "core/_field.html" with field=form.porte %}</div>
-  <div class="col-md-4">{% include "core/_field.html" with field=form.atividade %}</div>
+  <div class="col-md-3">{% include "core/_field.html" with field=form.regime_tributario %}</div>
+  <div class="col-md-12">{% include "core/_field.html" with field=form.atividade %}</div>
   <div class="col-md-7">{% include "core/_field.html" with field=form.endereco %}</div>
   <div class="col-md-4">{% include "core/_field.html" with field=form.municipio %}</div>
   <div class="col-md-1">{% include "core/_field.html" with field=form.uf %}</div>
   <div class="col-md-4">{% include "core/_field.html" with field=form.responsavel %}</div>
   <div class="col-md-4">{% include "core/_field.html" with field=form.email %}</div>
   <div class="col-md-4">{% include "core/_field.html" with field=form.whatsapp %}</div>
+  <div class="col-12"><hr class="my-1"><h6 class="text-primary mb-0">Comercial</h6></div>
+  <div class="col-md-4">{% include "core/_field.html" with field=form.indicado_por %}
+    <datalist id="indicadores">{% for i in indicadores %}<option value="{{ i }}">{% endfor %}</datalist></div>
+  <div class="col-md-8"><label class="form-label">{{ form.servicos.label }}</label>
+    <div class="row row-cols-1 row-cols-md-2 g-1">{% for c in form.servicos %}
+      <div class="col"><div class="form-check">{{ c.tag }} <label class="form-check-label small" for="{{ c.id_for_label }}">{{ c.choice_label }}</label></div></div>
+    {% empty %}<div class="col small text-muted">Nenhum produto ativo no catálogo da consultoria.</div>{% endfor %}</div>
+    <div class="form-text">{{ form.servicos.help_text }}</div>
+    {% for e in form.servicos.errors %}<div class="text-danger small">{{ e }}</div>{% endfor %}</div>
   <div class="col-12">{% include "core/_field.html" with field=form.observacoes %}</div>
 </div></div>
 <div class="card-footer bg-white d-flex gap-2">
@@ -32,8 +42,8 @@ document.getElementById('btnCnpj').addEventListener('click', async function(){
   try{
     const r=await fetch('{% url "consulta_cnpj" %}?cnpj='+encodeURIComponent(cnpj)); const d=await r.json();
     if(!r.ok){msg.className='small ms-1 text-danger'; msg.textContent=d.erro; return;}
-    for(const k of ['razao_social','nome_fantasia','atividade','endereco','municipio','uf','responsavel','email','porte']){
-      const el=document.getElementById('id_'+k); if(el && d[k] && (k==='porte' || !el.value.trim())) el.value=d[k];
+    for(const k of ['razao_social','nome_fantasia','atividade','endereco','municipio','uf','responsavel','email','porte','regime_tributario']){
+      const el=document.getElementById('id_'+k); if(el && d[k] && (k==='porte' || k==='regime_tributario' || !el.value.trim())) el.value=d[k];
     }
     msg.className='small ms-1 text-success'; msg.textContent='dados preenchidos';
   }catch(e){msg.className='small ms-1 text-danger'; msg.textContent='falha na consulta';}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% load capag %}{% block title %}Clientes por serviço{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div><h4 class="mb-0">Clientes por serviço</h4>
+    <div class="text-muted small">Empresas ativas separadas pelo produto da consultoria oferecido a cada uma. Uma empresa com mais de um serviço aparece em cada grupo.</div></div>
+  <a class="btn btn-outline-secondary" href="?{{ request.GET.urlencode }}&formato=csv"><i class="bi bi-filetype-csv"></i> Exportar CSV</a>
+</div>
+<form class="row g-2 mb-3">
+  {% include "core/relatorios/_filtros_comerciais.html" %}
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100"><i class="bi bi-funnel"></i> Filtrar</button></div>
+</form>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="card h-100"><div class="card-header">Por serviço <span class="text-muted fw-normal small">· {{ total }} empresa(s)</span></div>
+    <ul class="list-group list-group-flush small">{% for g in grupos %}
+      <li class="list-group-item d-flex justify-content-between"><a href="#servico-{{ forloop.counter }}" class="text-decoration-none">{{ g.nome }}</a><span class="fw-bold">{{ g.empresas|length }}</span></li>
+    {% empty %}<li class="list-group-item text-muted">Nenhuma empresa.</li>{% endfor %}</ul></div></div>
+  <div class="col-md-4"><div class="card h-100"><div class="card-header">Por regime tributário</div>
+    <ul class="list-group list-group-flush small">{% for k, n, pct in por_regime %}
+      <li class="list-group-item"><div class="d-flex justify-content-between"><span>{{ k }}</span><span><b>{{ n }}</b> <span class="text-muted">({{ pct }}%)</span></span></div>
+        <div class="progress mt-1" style="height:4px"><div class="progress-bar" style="width:{{ pct }}%"></div></div></li>
+    {% empty %}<li class="list-group-item text-muted">—</li>{% endfor %}</ul></div></div>
+  <div class="col-md-4"><div class="card h-100"><div class="card-header">Por indicação</div>
+    <ul class="list-group list-group-flush small">{% for k, n, pct in por_indicacao %}
+      <li class="list-group-item"><div class="d-flex justify-content-between"><span>{{ k }}</span><span><b>{{ n }}</b> <span class="text-muted">({{ pct }}%)</span></span></div>
+        <div class="progress mt-1" style="height:4px"><div class="progress-bar bg-success" style="width:{{ pct }}%"></div></div></li>
+    {% empty %}<li class="list-group-item text-muted">—</li>{% endfor %}</ul></div></div>
+</div>
+
+{% for g in grupos %}
+<div class="card mb-3" id="servico-{{ forloop.counter }}">
+  <div class="card-header d-flex flex-wrap align-items-center gap-2">
+    <b>{{ g.nome }}</b>{% if g.area %}<span class="badge text-bg-light border">{{ g.area }}</span>{% endif %}
+    <span class="text-muted small">· {{ g.empresas|length }} empresa(s) · dívida somada {{ g.divida|brl }}</span>
+    <span class="ms-auto small">{% for r, n in g.ratings.items %}{% if n %}{% rating r %} {{ n }} {% endif %}{% endfor %}</span>
+  </div>
+  <div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
+  <thead><tr><th>Empresa</th><th>Regime</th><th>Porte</th><th>Indicado por</th><th>Município</th><th>Última análise</th><th class="num">Dívida</th><th class="text-center">Real</th></tr></thead>
+  <tbody>{% for e in g.empresas %}
+  <tr style="cursor:pointer" onclick="location='{{ e.get_absolute_url }}'">
+    <td>{{ e.razao_social|truncatechars:40 }}<div class="small text-muted">{{ e.cnpj }}</div></td>
+    <td class="small">{{ e.get_regime_tributario_display|default:"—" }}</td><td class="small">{{ e.get_porte_display }}</td>
+    <td class="small">{{ e.indicado_por|default:"—" }}</td><td class="small">{{ e.municipio }}{% if e.uf %}/{{ e.uf }}{% endif %}</td>
+    <td>{% if e.ultima %}{{ e.ultima.data_referencia|date:"d/m/Y" }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+    <td class="num">{% if e.ultima %}{{ e.ultima.divida_total|brl }}{% else %}—{% endif %}</td>
+    <td class="text-center">{% if e.ultima %}{% rating e.ultima.rating_real %}{% endif %}</td></tr>
+  {% endfor %}</tbody></table></div>
+</div>
+{% empty %}<div class="card"><div class="card-body text-center text-muted py-4">Nenhuma empresa encontrada com esses filtros.</div></div>
+{% endfor %}
+{% endblock %}

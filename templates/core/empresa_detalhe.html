@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% load capag %}{% block title %}{{ empresa.razao_social }}{% endblock %}
 {% block content %}
 <div class="d-flex flex-wrap justify-content-between align-items-start mb-3 gap-2">
-  <div><h4 class="mb-0">{{ empresa.razao_social }}</h4><div class="text-muted">{{ empresa.cnpj }} · {{ empresa.get_porte_display }}</div></div>
+  <div><h4 class="mb-0">{{ empresa.razao_social }}</h4><div class="text-muted">{{ empresa.cnpj }} · {{ empresa.get_porte_display }}{% if empresa.regime_tributario %} · {{ empresa.get_regime_tributario_display }}{% endif %}</div></div>
   <div class="d-flex gap-2">
     <a href="{% url 'analise_nova' empresa.pk %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nova análise de CAPAG</a>
     <a href="{% url 'crm:contato_novo' %}?empresa={{ empresa.pk }}" class="btn btn-outline-secondary"><i class="bi bi-person-plus"></i> Contato no CRM</a>
@@ -17,6 +17,9 @@
     {% if empresa.responsavel %}<p class="mb-1"><b>Responsável:</b> {{ empresa.responsavel }}</p>{% endif %}
     <p class="mb-1"><b>E-mail:</b> {{ empresa.email|default:"—" }}</p>
     <p class="mb-1"><b>WhatsApp:</b> {{ empresa.whatsapp|whatsapp_fmt|default:"—" }}</p>
+    <p class="mb-1"><b>Regime tributário:</b> {{ empresa.get_regime_tributario_display|default:"—" }}</p>
+    <p class="mb-1"><b>Indicado por:</b> {{ empresa.indicado_por|default:"—" }}</p>
+    <p class="mb-1"><b>Serviços:</b>{% for p in empresa.servicos.all %} <span class="badge text-bg-light border">{{ p.nome }}</span>{% empty %} —{% endfor %}</p>
     {% if empresa.observacoes %}<p class="mb-0 mt-2">{{ empresa.observacoes|linebreaksbr }}</p>{% endif %}
   </div>
   {% if pode.excluir %}<div class="card-footer bg-white"><form method="post" action="{% url 'empresa_excluir' empresa.pk %}" onsubmit="return confirm('Excluir a empresa e todas as análises?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Excluir empresa</button></form></div>{% endif %}

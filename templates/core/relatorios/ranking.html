@@ -11,7 +11,8 @@
   <div class="col-6 col-md-2"><select name="ano" class="form-select"><option value="">Ano fiscal</option>{% for y in anos %}<option {% if ano == y %}selected{% endif %}>{{ y }}</option>{% endfor %}</select></div>
   <div class="col-6 col-md-2"><select name="faixa" class="form-select"><option value="">Faixa</option>{% for r in "ABCD" %}<option {% if faixa == r %}selected{% endif %}>{{ r }}</option>{% endfor %}</select></div>
   <div class="col-6 col-md-2"><select name="porte" class="form-select"><option value="">Porte</option>{% for v,l in portes %}<option value="{{ v }}" {% if porte == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
-  <div class="col-6 col-md-2"><button class="btn btn-outline-secondary w-100"><i class="bi bi-funnel"></i> Filtrar</button></div>
+  {% include "core/relatorios/_filtros_comerciais.html" %}
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100"><i class="bi bi-funnel"></i> Filtrar</button></div>
 </form>
 
 <div class="row g-3 mb-3">
@@ -29,12 +30,12 @@
 {% for r, lista in grupos.items %}
 <div class="card mb-3" id="faixa-{{ r }}"><div class="card-header d-flex align-items-center gap-2">{% rating r %} Faixa {{ r }} <span class="text-muted fw-normal small">· {{ lista|length }} empresa(s)</span></div>
 <div class="table-responsive"><table class="table table-sm table-hover mb-0 align-middle">
-<thead><tr><th>#</th><th>Empresa</th><th>Setor</th><th>Data ref.</th><th class="num">Dívida</th><th class="num">CAPAG real</th><th class="num">CAPAG ÷ dívida</th>
+<thead><tr><th>#</th><th>Empresa</th><th>Setor / regime</th><th>Data ref.</th><th class="num">Dívida</th><th class="num">CAPAG real</th><th class="num">CAPAG ÷ dívida</th>
 <th class="num">Endivid.</th><th class="num">Poupança</th><th class="num">Liquidez</th><th class="text-center">PGFN</th></tr></thead>
 <tbody>{% for a in lista %}
 <tr style="cursor:pointer" onclick="location='{{ a.get_absolute_url }}'"><td class="text-muted">{{ forloop.counter }}</td>
 <td>{{ a.empresa.razao_social|truncatechars:36 }}<div class="small text-muted">{{ a.empresa.cnpj }}</div></td>
-<td class="small">{{ a.empresa.atividade|default:"—"|truncatechars:28 }}</td><td>{{ a.data_referencia|date:"d/m/Y" }}</td>
+<td class="small">{{ a.empresa.atividade|default:"—"|truncatechars:28 }}{% if a.empresa.regime_tributario %}<div class="text-muted">{{ a.empresa.get_regime_tributario_display }}</div>{% endif %}</td><td>{{ a.data_referencia|date:"d/m/Y" }}</td>
 <td class="num">{{ a.divida_total|brl }}</td><td class="num">{{ a.capag_real|brl }}</td><td class="num fw-bold">{{ a.razao|floatformat:2|default:"—" }}{% if a.razao is not None %}×{% endif %}</td>
 {% for k in "endividamento poupanca liquidez"|split %}{% with i=a.ind|get_item:k %}<td class="num text-{{ i.cor }}">{{ i.texto }}</td>{% endwith %}{% endfor %}
 <td class="text-center">{% rating a.rating_pgfn %}</td></tr>

@@ -4,14 +4,19 @@
   <h4 class="mb-0">Empresas</h4>
   <a href="{% url 'empresa_nova' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Nova empresa</a>
 </div>
-<form class="mb-3"><div class="input-group"><input name="q" value="{{ q }}" class="form-control" placeholder="Buscar por razão social, CNPJ ou município"><button class="btn btn-outline-secondary"><i class="bi bi-search"></i></button></div></form>
+<form class="row g-2 mb-3">
+  <div class="col-md-5"><input name="q" value="{{ q }}" class="form-control" placeholder="Buscar por razão social, CNPJ, município ou indicação"></div>
+  <div class="col-6 col-md-2"><select name="regime" class="form-select"><option value="">Regime tributário</option>{% for v,l in regimes %}<option value="{{ v }}" {% if regime == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-3"><select name="servico" class="form-select"><option value="">Serviço</option>{% for p in produtos %}<option value="{{ p.pk }}" {% if servico == p.pk %}selected{% endif %}>{{ p.nome }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><button class="btn btn-outline-secondary w-100"><i class="bi bi-search"></i> Filtrar</button></div>
+</form>
 <div class="card"><div class="table-responsive"><table class="table table-hover mb-0 align-middle">
-<thead><tr><th>Razão social</th><th>CNPJ</th><th>Município</th><th>Contato</th><th class="text-center">Análises</th></tr></thead>
+<thead><tr><th>Razão social</th><th>CNPJ</th><th>Regime</th><th>Município</th><th>Contato</th><th class="text-center">Análises</th></tr></thead>
 <tbody>{% for e in page %}
 <tr style="cursor:pointer" onclick="location='{{ e.get_absolute_url }}'"><td>{{ e.razao_social }}{% if e.nome_fantasia %}<div class="small text-muted">{{ e.nome_fantasia }}</div>{% endif %}</td>
-<td class="text-nowrap">{{ e.cnpj }}</td><td>{{ e.municipio }}{% if e.uf %}/{{ e.uf }}{% endif %}</td>
+<td class="text-nowrap">{{ e.cnpj }}</td><td class="small">{{ e.get_regime_tributario_display|default:"—" }}{% if e.indicado_por %}<div class="text-muted">Indicação: {{ e.indicado_por }}</div>{% endif %}</td><td>{{ e.municipio }}{% if e.uf %}/{{ e.uf }}{% endif %}</td>
 <td class="small">{% if e.email %}<div><i class="bi bi-envelope"></i> {{ e.email }}</div>{% endif %}{% if e.whatsapp %}<div><i class="bi bi-whatsapp text-success"></i> {{ e.whatsapp|whatsapp_fmt }}</div>{% endif %}</td>
 <td class="text-center">{{ e.n_analises }}</td></tr>
-{% empty %}<tr><td colspan="5" class="text-center text-muted py-4">Nenhuma empresa encontrada.</td></tr>{% endfor %}</tbody>
+{% empty %}<tr><td colspan="6" class="text-center text-muted py-4">Nenhuma empresa encontrada.</td></tr>{% endfor %}</tbody>
 </table></div><div class="card-footer bg-white">{% include "core/_paginacao.html" %}</div></div>
 {% endblock %}

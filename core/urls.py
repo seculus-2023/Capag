@@ -39,6 +39,7 @@ urlpatterns = [
     path("relatorios/composicao/", views.relatorio_composicao, name="relatorio_composicao"),
     path("relatorios/composicao/<int:pk>/", views.relatorio_composicao, name="relatorio_composicao_analise"),
     path("relatorios/alertas/", views.relatorio_alertas, name="relatorio_alertas"),
+    path("relatorios/servicos/", views.relatorio_servicos, name="relatorio_servicos"),
 
     path("parametros/", views.parametros, name="parametros"),
     path("usuarios/", views.usuarios, name="usuarios"),

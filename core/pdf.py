@@ -70,6 +70,7 @@ def gerar_pdf(a):
             ["Razão social", Paragraph(e.razao_social, s["Cel"])],
             ["CNPJ", e.cnpj],
             ["Porte", e.get_porte_display()],
+            ["Regime tributário", e.get_regime_tributario_display() or "—"],
             ["Município/UF", f"{e.municipio}/{e.uf}" if e.municipio else "—"],
             ["Data de referência", a.data_referencia.strftime("%d/%m/%Y")],
             ["Requerimento REGULARIZE", a.numero_requerimento or "—"],

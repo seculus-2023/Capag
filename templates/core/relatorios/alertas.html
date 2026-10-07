@@ -12,6 +12,7 @@
     <option value="atencao" {% if severidade == "atencao" %}selected{% endif %}>Atenção</option>
     <option value="info" {% if severidade == "info" %}selected{% endif %}>Informativo</option></select></div>
   <div class="col-md-4"><select name="tipo" class="form-select"><option value="">Tipo de alerta</option>{% for v,l in tipos %}<option value="{{ v }}" {% if tipo == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+  {% include "core/relatorios/_filtros_comerciais.html" %}
   <div class="col-md-2"><button class="btn btn-outline-secondary w-100"><i class="bi bi-funnel"></i> Filtrar</button></div>
 </form>
 

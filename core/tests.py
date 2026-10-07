@@ -192,8 +192,46 @@ class RelatoriosTest(Base):
         self.assertContains(r, "Nota caiu de A")
         self.assertEqual(self.client.get(reverse("relatorio_alertas"), {"formato": "csv"}).status_code, 200)
 
+    def test_regime_indicacao_e_servicos(self):
+        from consultoria.models import Produto
+        capag = Produto.objects.create(nome="Revisão de CAPAG", area="TRIB_FED", escopo="x")
+        transacao = Produto.objects.create(nome="Transação tributária", area="TRIB_FED", escopo="x")
+        r = self.client.post(reverse("empresa_editar", args=[self.empresa.pk]), {
+            "cnpj": self.empresa.cnpj, "razao_social": self.empresa.razao_social, "porte": "EPP",
+            "regime_tributario": "PRESUMIDO", "indicado_por": "Contador João", "servicos": [capag.pk, transacao.pk],
+        })
+        self.assertRedirects(r, self.empresa.get_absolute_url())
+        self.empresa.refresh_from_db()
+        self.assertEqual(self.empresa.get_regime_tributario_display(), "Lucro Presumido")
+        self.assertEqual(set(self.empresa.servicos.all()), {capag, transacao})
+        self.assertContains(self.client.get(self.empresa.get_absolute_url()), "Contador João")
+
+        outra = Empresa.objects.create(cnpj="11222333000181", razao_social="BETA LTDA", regime_tributario="SIMPLES")
+        outra.servicos.add(transacao)
+        nova_analise(self.empresa)
+        nova_analise(outra)
+
+        r = self.client.get(reverse("relatorio_servicos"))
+        grupos = {g["nome"]: [e.razao_social for e in g["empresas"]] for g in r.context["grupos"]}
+        self.assertEqual(grupos, {"Transação tributária": ["BETA LTDA", "IDEAL TERRAPLANAGEM LTDA"],
+                                  "Revisão de CAPAG": ["IDEAL TERRAPLANAGEM LTDA"]})
+        r = self.client.get(reverse("relatorio_servicos"), {"servico": capag.pk})
+        self.assertEqual([g["nome"] for g in r.context["grupos"]], ["Revisão de CAPAG"])
+        r = self.client.get(reverse("relatorio_servicos"), {"regime": "SIMPLES"})
+        self.assertEqual(r.context["total"], 1)
+        csv = self.client.get(reverse("relatorio_servicos"), {"formato": "csv"}).content.decode("utf-8")
+        self.assertIn("Lucro Presumido;Contador João", csv)
+
+        r = self.client.get(reverse("relatorio_ranking"), {"servico": capag.pk})
+        self.assertEqual(r.context["total"], 1)
+        r = self.client.get(reverse("relatorio_ranking"), {"indicado": "joão", "formato": "csv"})
+        self.assertIn("Revisão de CAPAG, Transação tributária", r.content.decode("utf-8"))
+        r = self.client.get(reverse("empresa_lista"), {"regime": "SIMPLES"})
+        self.assertEqual([e.razao_social for e in r.context["page"]], ["BETA LTDA"])
+
     def test_telas_vazias(self):
-        for nome in ["relatorios", "relatorio_ranking", "relatorio_evolucao", "relatorio_composicao", "relatorio_alertas"]:
+        for nome in ["relatorios", "relatorio_ranking", "relatorio_evolucao", "relatorio_composicao", "relatorio_alertas",
+                     "relatorio_servicos"]:
             self.assertEqual(self.client.get(reverse(nome)).status_code, 200, nome)
 
 

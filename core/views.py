@@ -15,6 +15,8 @@ from django.templatetags.static import static
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
+from consultoria.models import Produto
+
 from .envio import enviar_email, enviar_whatsapp, validar_token, whatsapp_api_configurada
 from .forms import AnaliseForm, EmpresaForm, EnvioEmailForm, EnvioWhatsappForm, ParametroForm, UsuarioForm
 from .perfis import PERFIS, PERMISSOES, definir_perfil, exige, perfil_de, pode
@@ -51,16 +53,25 @@ def dashboard(request):
 @exige("capag")
 def empresa_lista(request):
     q = request.GET.get("q", "").strip()
-    qs = Empresa.objects.annotate(n_analises=Count("analises")).order_by("razao_social")
+    regime = request.GET.get("regime", "")
+    servico = _int(request.GET.get("servico"))
+    qs = Empresa.objects.annotate(n_analises=Count("analises", distinct=True)).order_by("razao_social")
+    if regime:
+        qs = qs.filter(regime_tributario=regime)
+    if servico:
+        qs = qs.filter(servicos=servico)
     if q:
         dig = somente_digitos(q)
-        filtro = (Q(razao_social__icontains=q) | Q(nome_fantasia__icontains=q)
+        filtro = (Q(razao_social__icontains=q) | Q(nome_fantasia__icontains=q) | Q(indicado_por__icontains=q)
                   | Q(municipio__icontains=q) | Q(cnpj__icontains=q))
         if len(dig) == 14:
             filtro |= Q(cnpj=formatar_cnpj(dig))
         qs = qs.filter(filtro)
     page = Paginator(qs, 20).get_page(request.GET.get("page"))
-    return render(request, "core/empresa_lista.html", {"page": page, "q": q})
+    return render(request, "core/empresa_lista.html", {
+        "page": page, "q": q, "regime": regime, "servico": servico,
+        "regimes": Empresa.REGIMES, "produtos": Produto.objects.order_by("nome"),
+    })
 
 
 @exige("capag")
@@ -72,9 +83,12 @@ def empresa_form(request, pk=None):
         if not obj.pk:
             obj.criado_por = request.user
         obj.save()
+        form.save_m2m()
         messages.success(request, "Empresa salva com sucesso.")
         return redirect(obj)
-    return render(request, "core/empresa_form.html", {"form": form, "empresa": empresa})
+    indicadores = (Empresa.objects.exclude(indicado_por="").values_list("indicado_por", flat=True)
+                   .distinct().order_by("indicado_por"))
+    return render(request, "core/empresa_form.html", {"form": form, "empresa": empresa, "indicadores": indicadores})
 
 
 @exige("capag")
@@ -125,6 +139,8 @@ def consulta_cnpj(request):
         "uf": (est.get("estado") or {}).get("sigla", ""),
         "email": est.get("email") or "",
         "porte": "ME" if "MICRO" in porte else "EPP" if "PEQUENO" in porte else "DEMAIS",
+        # a Receita só informa a opção pelo Simples; Lucro Presumido × Real fica para o usuário escolher
+        "regime_tributario": "SIMPLES" if ((d.get("simples") or {}).get("simples") or "").upper() == "SIM" else "",
         "responsavel": socios[0].get("nome", "") if socios else "",
     })
 
@@ -349,6 +365,26 @@ def _dec(v, casas=4):
     return "" if v is None else f"{v:.{casas}f}".replace(".", ",")
 
 
+def _filtros_comerciais(request, qs, campo=""):
+    """Aplica os filtros de regime tributário, serviço e indicação. `campo` é o caminho até a empresa."""
+    f = {"regime": request.GET.get("regime", ""), "servico": _int(request.GET.get("servico")),
+         "indicado": request.GET.get("indicado", "").strip()}
+    if f["regime"]:
+        qs = qs.filter(**{f"{campo}regime_tributario": f["regime"]})
+    if f["servico"]:
+        qs = qs.filter(**{f"{campo}servicos": f["servico"]})
+    if f["indicado"]:
+        qs = qs.filter(**{f"{campo}indicado_por__icontains": f["indicado"]})
+    f.update(regimes=Empresa.REGIMES, produtos=Produto.objects.order_by("nome"),
+             indicadores=(Empresa.objects.exclude(indicado_por="").values_list("indicado_por", flat=True)
+                          .distinct().order_by("indicado_por")))
+    return qs, f
+
+
+def _servicos_txt(empresa):
+    return ", ".join(p.nome for p in empresa.servicos.all())
+
+
 @exige("capag")
 def relatorios(request):
     return render(request, "core/relatorios/index.html")
@@ -360,7 +396,9 @@ def relatorio_ranking(request):
     setor = request.GET.get("setor", "").strip()
     faixa = request.GET.get("faixa", "")
     porte = request.GET.get("porte", "")
-    qs = AnaliseCapag.objects.select_related("empresa").filter(empresa__ativo=True)
+    qs = (AnaliseCapag.objects.select_related("empresa").prefetch_related("empresa__servicos")
+          .filter(empresa__ativo=True))
+    qs, filtros = _filtros_comerciais(request, qs, "empresa__")
     if ano:
         qs = qs.filter(data_referencia__year=ano)
     if setor:
@@ -373,12 +411,14 @@ def relatorio_ranking(request):
 
     if request.GET.get("formato") == "csv":
         linhas = [[r, a.empresa.razao_social, a.empresa.cnpj, a.empresa.atividade, a.empresa.get_porte_display(),
+                   a.empresa.get_regime_tributario_display(), a.empresa.indicado_por, _servicos_txt(a.empresa),
                    a.data_referencia.strftime("%d/%m/%Y"), _dec(a.divida_total, 2), _dec(a.capag_real, 2),
                    _dec(a.razao), _dec(a.ind["endividamento"]["valor"]), _dec(a.ind["poupanca"]["valor"]),
                    _dec(a.ind["liquidez"]["valor"]), a.rating_pgfn]
                   for r, lst in grupos.items() for a in lst]
         return _csv(f"ranking_capag_{ano or 'todos'}.csv",
-                    ["Faixa", "Razão social", "CNPJ", "Atividade", "Porte", "Data ref.", "Dívida", "CAPAG real",
+                    ["Faixa", "Razão social", "CNPJ", "Atividade", "Porte", "Regime tributário", "Indicado por",
+                     "Serviços", "Data ref.", "Dívida", "CAPAG real",
                      "CAPAG/Dívida", "Endividamento", "Poupança corrente", "Liquidez", "Rating PGFN"], linhas)
 
     total = sum(len(v) for v in grupos.values())
@@ -387,7 +427,7 @@ def relatorio_ranking(request):
                .distinct().order_by("atividade"))
     return render(request, "core/relatorios/ranking.html", {
         "grupos": grupos, "resumo": resumo, "total": total, "anos": _anos_disponiveis(), "setores": setores,
-        "ano": ano, "setor": setor, "faixa": faixa, "porte": porte, "portes": Empresa.PORTES,
+        "ano": ano, "setor": setor, "faixa": faixa, "porte": porte, "portes": Empresa.PORTES, **filtros,
     })
 
 
@@ -434,7 +474,9 @@ def relatorio_alertas(request):
     ano = _int(request.GET.get("ano"))
     severidade = request.GET.get("severidade", "")
     tipo = request.GET.get("tipo", "")
-    lista = rel.alertas(AnaliseCapag.objects.filter(empresa__ativo=True), ano=ano)
+    qs, filtros = _filtros_comerciais(
+        request, AnaliseCapag.objects.prefetch_related("empresa__servicos").filter(empresa__ativo=True), "empresa__")
+    lista = rel.alertas(qs, ano=ano)
     if severidade:
         lista = [x for x in lista if x.severidade == severidade]
     if tipo:
@@ -442,9 +484,11 @@ def relatorio_alertas(request):
 
     if request.GET.get("formato") == "csv":
         return _csv(f"alertas_capag_{ano or 'todos'}.csv",
-                    ["Severidade", "Tipo", "Razão social", "CNPJ", "Data ref.", "Rating real", "Alerta"],
+                    ["Severidade", "Tipo", "Razão social", "CNPJ", "Regime tributário", "Indicado por", "Serviços",
+                     "Data ref.", "Rating real", "Alerta"],
                     [[x.severidade_label, x.tipo_label, x.analise.empresa.razao_social, x.analise.empresa.cnpj,
-                      x.analise.data_referencia.strftime("%d/%m/%Y"), x.analise.rating_real, x.mensagem]
+                      x.analise.empresa.get_regime_tributario_display(), x.analise.empresa.indicado_por,
+                      _servicos_txt(x.analise.empresa), x.analise.data_referencia.strftime("%d/%m/%Y"), x.analise.rating_real, x.mensagem]
                      for x in lista])
 
     empresas = {}
@@ -454,7 +498,37 @@ def relatorio_alertas(request):
     return render(request, "core/relatorios/alertas.html", {
         "empresas": list(empresas.values()), "contagem": contagem, "total": len(lista),
         "anos": _anos_disponiveis(), "ano": ano, "severidade": severidade, "tipo": tipo,
-        "tipos": rel.TIPOS_ALERTA,
+        "tipos": rel.TIPOS_ALERTA, **filtros,
+    })
+
+
+@exige("capag")
+def relatorio_servicos(request):
+    """Carteira de clientes separada pelo serviço (produto da consultoria) oferecido a cada um."""
+    qs = Empresa.objects.filter(ativo=True).prefetch_related("servicos").order_by("razao_social")
+    qs, filtros = _filtros_comerciais(request, qs)
+    empresas = list(qs.distinct())
+    ultimas = {a.empresa_id: a for a in rel.ultimas_por_empresa(AnaliseCapag.objects.filter(empresa__in=empresas))}
+    for e in empresas:
+        e.ultima = ultimas.get(e.pk)
+    grupos = rel.por_servico(empresas, filtros["servico"])
+
+    if request.GET.get("formato") == "csv":
+        return _csv("clientes_por_servico.csv",
+                    ["Serviço", "Área", "Razão social", "CNPJ", "Porte", "Regime tributário", "Indicado por",
+                     "Município/UF", "Última análise", "Dívida", "Rating real"],
+                    [[g["nome"], g["area"], e.razao_social, e.cnpj, e.get_porte_display(),
+                      e.get_regime_tributario_display(), e.indicado_por,
+                      f"{e.municipio}/{e.uf}" if e.municipio else "",
+                      e.ultima.data_referencia.strftime("%d/%m/%Y") if e.ultima else "",
+                      _dec(e.ultima.divida_total, 2) if e.ultima else "", e.ultima.rating_real if e.ultima else ""]
+                     for g in grupos for e in g["empresas"]])
+
+    return render(request, "core/relatorios/servicos.html", {
+        "grupos": grupos, "total": len(empresas),
+        "por_regime": rel.contagem(empresas, lambda e: e.get_regime_tributario_display() or "Não informado"),
+        "por_indicacao": rel.contagem(empresas, lambda e: e.indicado_por or "Sem indicação"),
+        **filtros,
     })
 
 

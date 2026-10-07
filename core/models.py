@@ -55,11 +55,13 @@ class Parametro(models.Model):
 
 class Empresa(models.Model):
     PORTES = [("ME", "Microempresa"), ("EPP", "Empresa de Pequeno Porte"), ("DEMAIS", "Demais")]
+    REGIMES = [("SIMPLES", "Simples Nacional"), ("PRESUMIDO", "Lucro Presumido"), ("REAL", "Lucro Real")]
 
     cnpj = models.CharField("CNPJ", max_length=18, unique=True, validators=[validar_cnpj])
     razao_social = models.CharField("Razão social", max_length=200)
     nome_fantasia = models.CharField("Nome fantasia", max_length=200, blank=True)
     porte = models.CharField("Porte", max_length=6, choices=PORTES, default="DEMAIS")
+    regime_tributario = models.CharField("Regime tributário", max_length=9, choices=REGIMES, blank=True)
     atividade = models.CharField("Atividade principal", max_length=200, blank=True)
     endereco = models.CharField("Endereço", max_length=250, blank=True)
     municipio = models.CharField("Município", max_length=100, blank=True)
@@ -67,6 +69,11 @@ class Empresa(models.Model):
     responsavel = models.CharField("Responsável / sócio-administrador", max_length=150, blank=True)
     email = models.EmailField("E-mail", blank=True)
     whatsapp = models.CharField("WhatsApp", max_length=20, blank=True, validators=[validar_whatsapp])
+    indicado_por = models.CharField("Indicado por", max_length=150, blank=True,
+                                    help_text="Quem indicou o cliente (parceiro, contador, outro cliente...).")
+    servicos = models.ManyToManyField("consultoria.Produto", verbose_name="Serviços de que o cliente precisa",
+                                      blank=True, related_name="empresas",
+                                      help_text="Produtos do catálogo da consultoria oferecidos a este cliente.")
     observacoes = models.TextField("Observações", blank=True)
     ativo = models.BooleanField(default=True)
     criado_por = models.ForeignKey(settings.AUTH_USER_MODEL, null=True, blank=True, on_delete=models.SET_NULL, related_name="+")

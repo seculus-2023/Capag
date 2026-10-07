@@ -306,3 +306,38 @@ def alertas(analises_qs, ano=None, hoje=None):
         saida += alertas_da_analise(atual, anterior, hoje)
     saida.sort(key=lambda x: (ORDEM_SEVERIDADE[x.severidade], x.analise.empresa.razao_social))
     return saida
+
+
+# ------------------------------------------------------------------ carteira por serviço
+def por_servico(empresas, servico_id=None):
+    """Agrupa as empresas por serviço contratado/oferecido. Uma empresa com dois serviços aparece nos dois grupos.
+
+    Com `servico_id`, mostra só o grupo daquele serviço; sem ele, inclui "Sem serviço definido" no fim.
+    """
+    grupos = {}
+    sem = []
+    for e in empresas:
+        servicos = [p for p in e.servicos.all() if not servico_id or p.pk == servico_id]
+        if not servicos and not servico_id:
+            sem.append(e)
+        for p in servicos:
+            grupos.setdefault(p.pk, {"produto": p, "nome": p.nome, "area": p.get_area_display(),
+                                     "empresas": []})["empresas"].append(e)
+    saida = sorted(grupos.values(), key=lambda g: (-len(g["empresas"]), g["nome"]))
+    if sem:
+        saida.append({"produto": None, "nome": "Sem serviço definido", "area": "", "empresas": sem})
+    for g in saida:
+        g["ratings"] = {r: sum(1 for e in g["empresas"] if e.ultima and e.ultima.rating_real == r) for r in NIVEIS}
+        g["divida"] = sum((e.ultima.divida_total for e in g["empresas"] if e.ultima), Decimal("0"))
+    return saida
+
+
+def contagem(itens, chave):
+    """[(rótulo, quantidade, %)] do maior para o menor."""
+    cont = {}
+    for i in itens:
+        k = chave(i)
+        cont[k] = cont.get(k, 0) + 1
+    total = len(itens)
+    return [(k, n, round(100 * n / total) if total else 0)
+            for k, n in sorted(cont.items(), key=lambda x: (-x[1], x[0]))]

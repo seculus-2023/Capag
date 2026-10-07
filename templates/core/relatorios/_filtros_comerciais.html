@@ -1,0 +1,4 @@
+<div class="col-6 col-md-3"><select name="regime" class="form-select"><option value="">Regime tributário</option>{% for v,l in regimes %}<option value="{{ v }}" {% if regime == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+<div class="col-6 col-md-4"><select name="servico" class="form-select"><option value="">Serviço oferecido</option>{% for p in produtos %}<option value="{{ p.pk }}" {% if servico == p.pk %}selected{% endif %}>{{ p.nome }}{% if not p.ativo %} (inativo){% endif %}</option>{% endfor %}</select></div>
+<div class="col-md-3"><input name="indicado" value="{{ indicado }}" list="indicadores" class="form-control" placeholder="Indicado por" autocomplete="off">
+  <datalist id="indicadores">{% for i in indicadores %}<option value="{{ i }}">{% endfor %}</datalist></div>

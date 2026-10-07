@@ -1,6 +1,7 @@
 from decimal import Decimal
 
 from django import forms
+from django.db.models import Q
 from django.contrib.auth import get_user_model
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 
@@ -12,6 +13,8 @@ class BootstrapMixin:
     def _bootstrap(self):
         for f in self.fields.values():
             w = f.widget
+            if isinstance(w, forms.CheckboxSelectMultiple):
+                continue  # renderizado item a item no template
             if isinstance(w, forms.CheckboxInput):
                 w.attrs.setdefault("class", "form-check-input")
             elif isinstance(w, forms.Select):
@@ -32,10 +35,18 @@ class EmpresaForm(BootstrapMixin, forms.ModelForm):
     class Meta:
         model = Empresa
         exclude = ["criado_por", "ativo"]
-        widgets = {"observacoes": forms.Textarea(attrs={"rows": 3})}
+        widgets = {"observacoes": forms.Textarea(attrs={"rows": 3}),
+                   "servicos": forms.CheckboxSelectMultiple}
 
     def __init__(self, *a, **kw):
         super().__init__(*a, **kw)
+        from consultoria.models import Produto
+        servicos = self.fields["servicos"]
+        # produtos inativos continuam aparecendo se já estiverem marcados nesta empresa
+        servicos.queryset = Produto.objects.filter(
+            Q(ativo=True) | Q(pk__in=self.instance.servicos.all() if self.instance.pk else [])).order_by("area", "nome")
+        servicos.label_from_instance = lambda p: f"{p.nome} ({p.get_area_display()})"
+        self.fields["indicado_por"].widget.attrs.update({"list": "indicadores", "autocomplete": "off"})
         self.fields["cnpj"].widget.attrs.update({"placeholder": "00.000.000/0000-00", "data-mask": "cnpj"})
         self.fields["whatsapp"].widget.attrs.update({"placeholder": "(65) 99999-9999"})
         self.fields["uf"].widget.attrs.update({"maxlength": 2, "style": "text-transform:uppercase"})

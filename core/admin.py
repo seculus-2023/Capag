@@ -5,9 +5,10 @@ from .models import AnaliseCapag, Empresa, EnvioCapag, Parametro
 
 @admin.register(Empresa)
 class EmpresaAdmin(admin.ModelAdmin):
-    list_display = ["razao_social", "cnpj", "porte", "municipio", "uf", "email", "whatsapp", "ativo"]
-    list_filter = ["porte", "uf", "ativo"]
-    search_fields = ["razao_social", "nome_fantasia", "cnpj"]
+    list_display = ["razao_social", "cnpj", "porte", "regime_tributario", "indicado_por", "municipio", "uf", "ativo"]
+    list_filter = ["porte", "regime_tributario", "servicos", "uf", "ativo"]
+    search_fields = ["razao_social", "nome_fantasia", "cnpj", "indicado_por"]
+    filter_horizontal = ["servicos"]
 
 
 class EnvioInline(admin.TabularInline):
